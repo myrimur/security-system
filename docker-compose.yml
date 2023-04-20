@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  logging-service:
+    container_name: face-recognition-logging-service
+    image: "python:3.10-slim"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://0.0.0.0:8004/healthcheck" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      cassandra-ddl:
+        condition: service_completed_successfully
+    volumes:
+      - ./logging_service/main.py:/opt/app/main.py
+      - ./logging_service/requirements.txt:/opt/app/requirements.txt
+    command: /bin/bash -c "pip install --no-cache-dir --upgrade pip && cd /opt/app/ && pip install --no-cache-dir -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8004"
+    networks:
+      - face-recognition-network
+    ports:
+      - "8004:8004"
+
+  cassandra-node-1:
+    container_name: face-recognition-cassandra-node-1
+    image: "cassandra:latest"
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: always
+    environment:
+      - "MAX_HEAP_SIZE=256M"
+      - "HEAP_NEWSIZE=128M"
+    networks:
+      - face-recognition-network
+
+  cassandra-ddl:
+    container_name: face-recognition-cassandra-ddl
+    image: "cassandra:latest"
+    depends_on:
+      cassandra-node-1:
+        condition: service_healthy
+    volumes:
+      - ./logging_service/ddl.cql:/ddl.cql
+    command: /bin/bash -c "cqlsh cassandra-node-1 -f /ddl.cql"
+    networks:
+      - face-recognition-network
+
+  analytics-service:
+    container_name: face-recognition-analytics-service
+    image: "python:3.10-slim"
+    depends_on:
+      logging-service:
+        condition: service_healthy
+    volumes:
+      - ./analytics_service/main.py:/opt/app/main.py
+      - ./analytics_service/requirements.txt:/opt/app/requirements.txt
+    command: /bin/bash -c "pip install --no-cache-dir --upgrade pip && cd /opt/app/ && pip install --no-cache-dir -r requirements.txt && uvicorn main:app --host 0.0.0.0 --port 8005"
+    networks:
+      - face-recognition-network
+    ports:
+      - "8005:8005"
+
+
+networks:
+  face-recognition-network:
+    name: face-recognition-network

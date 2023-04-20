@@ -1,0 +1,29 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8004/appearances_by_person_id/3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc
+Accept: application/json
+###
+
+GET http://127.0.0.1:8004/appearances_by_person_id/3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc/2020-01-01
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8004/appearances_by_location/hall
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8004/appearances_by_location/hall/2020-01-01
+Accept: application/json
+
+###
+GET http://127.0.0.1:8004/appearances_by_location/6d52f90e-0177-4796-9fc7-536a9bff1ddb
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8004/appearances_by_location/6d52f90e-0177-4796-9fc7-536a9bff1ddb/2020-01-01
+Accept: application/json
+
+###
