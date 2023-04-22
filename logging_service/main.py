@@ -1,6 +1,5 @@
 from datetime import datetime
 from cassandra.cluster import Cluster
-from cassandra.query import SimpleStatement
 from cassandra.query import dict_factory
 from fastapi import FastAPI
 from pydantic import BaseModel
@@ -32,8 +31,9 @@ async def store_appearance(request_body: RequestBody):
     location = request_body.location
     appearance_time = datetime.fromisoformat(request_body.appearance_time)
 
-    query = SimpleStatement("INSERT INTO <table_name> (person_id, camera_id, location, appearance_time) VALUES (%s, %s, %s, %s)")
-    session.execute(query, (person_id, camera_id, location, appearance_time))
+    # TODO: insert in all 3 tables
+    query = f"INSERT INTO by_location (person_id, camera_id, location, appearance_time) VALUES ({person_id}, {camera_id}, '{location}', '{appearance_time}')"
+    session.execute(query)
 
     return {"message": "Data stored successfully."}
 
@@ -48,6 +48,10 @@ async def shutdown_event():
 async def get_appearances_by_person_id(person_id: str):
     return list(session.execute(f"SELECT * FROM by_person_id WHERE person_id = {person_id}"))
 
+
+@app.get("/{day}")
+async def get(day: str):
+    return list(session.execute(f"SELECT * FROM by_person_id WHERE appearance_time >= '{day}' AND appearance_time <= '{day} 23:59:59'"))
 
 @app.get("/appearances_by_person_id/{person_id}/{day}")
 async def get_appearances_by_person_id(person_id: str, day: str):
