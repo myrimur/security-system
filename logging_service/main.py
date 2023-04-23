@@ -7,7 +7,7 @@ from pydantic import BaseModel
 app = FastAPI()
 
 
-class RequestBody(BaseModel):
+class Appearance(BaseModel):
     person_id: str
     camera_id: str
     location: str
@@ -25,15 +25,16 @@ async def healthcheck():
 
 
 @app.post("/")
-async def store_appearance(request_body: RequestBody):
-    person_id = request_body.person_id
-    camera_id = request_body.camera_id
-    location = request_body.location
-    appearance_time = datetime.fromisoformat(request_body.appearance_time)
+async def store_appearance(appearance: Appearance):
+    person_id = appearance.person_id
+    camera_id = appearance.camera_id
+    location = appearance.location
+    appearance_time = appearance.appearance_time
 
-    # TODO: insert in all 3 tables
-    query = f"INSERT INTO by_location (person_id, camera_id, location, appearance_time) VALUES ({person_id}, {camera_id}, '{location}', '{appearance_time}')"
-    session.execute(query)
+    query = lambda table: f"INSERT INTO {table} (person_id, camera_id, location, appearance_time) VALUES ({person_id}, {camera_id}, '{location}', '{appearance_time}')"
+    session.execute(query("by_person_id"))
+    session.execute(query("by_location"))
+    session.execute(query("by_camera_id"))
 
     return {"message": "Data stored successfully."}
 

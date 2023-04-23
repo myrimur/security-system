@@ -48,7 +48,12 @@ Content-Type: application/json
 
 ###
 
-GET http://127.0.0.1:8005
+GET http://127.0.0.1:8005/alltime_stats
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8005/daily_stats
 Accept: application/json
 
 
