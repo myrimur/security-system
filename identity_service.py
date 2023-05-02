@@ -5,6 +5,15 @@ import cv2
 import numpy as np
 from datetime import datetime
 import pickle
+import hazelcast
+
+
+class StupidThing:
+    def __init__(self, enc):
+        self.encoding = enc
+
+    def get_encoding(self):
+        return self.encoding
 
 class IdentityService:
     '''
@@ -18,7 +27,15 @@ class IdentityService:
         self.to_logging_service = []
         self.to_access_service = []
 
+        self.client = hazelcast.HazelcastClient()
+        self.encodings_map = self.client.get_map("encodings-map").blocking()
+
         # TODO send to access and logging service once in a while and clear
+
+    def register_encoding(self, ref_img_path, name):
+        person_image = face_recognition.load_image_file(ref_img_path)
+        person_face_encoding = face_recognition.face_encodings(person_image, model="large", num_jitters=100)[0]
+        self.encodings_map.put(name, str(person_face_encoding))
 
 
     @staticmethod
@@ -59,14 +76,19 @@ class IdentityService:
 
                 face_names = []
                 for face_encoding in face_encodings:
+                    known_faces_and_names = np.asarray(self.encodings_map.entry_set())
+                    known_enc = []
 
-                    matches = face_recognition.compare_faces(self.known_face_encodings, face_encoding)
+                    for i, (_, elem) in enumerate(known_faces_and_names):
+                        known_enc.append(np.fromstring(elem[1:-1], sep=" "))
+
+                    matches = face_recognition.compare_faces(known_enc, face_encoding)
                     name = "Unknown"
 
-                    face_distances = face_recognition.face_distance(self.known_face_encodings, face_encoding)
+                    face_distances = face_recognition.face_distance(known_enc, face_encoding)
                     best_match_index = np.argmin(face_distances)
                     if matches[best_match_index]:
-                        name = self.known_face_names[best_match_index]
+                        name = known_faces_and_names[best_match_index, 0]
 
 
                     face_names.append(name)
@@ -98,6 +120,8 @@ class IdentityService:
 
         self.video_capture.release()
         cv2.destroyAllWindows()
+        self.client.shutdown()
 
 serv = IdentityService()
+serv.register_encoding("photo_2023-02-22_21-33-46.jpg", "Dasha")
 serv.detection_loop()
