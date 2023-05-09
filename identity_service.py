@@ -4,16 +4,34 @@ import face_recognition
 import cv2
 import numpy as np
 from datetime import datetime
-import pickle
+import requests
 import hazelcast
+from msgs import EncodingMsg
+import uvicorn
+from threading import Thread
 
+class IdentityController:
+    def __init__(self):
+        self.ident_serv = IdentityService()
+        self.app = FastAPI()
 
-class StupidThing:
-    def __init__(self, enc):
-        self.encoding = enc
+        self.access_url = "http://127.0.0.1:8000/access_service"
 
-    def get_encoding(self):
-        return self.encoding
+        # TODO: ¿stupid¿
+        t = Thread(target=self.ident_serv.detection_loop)
+        t.start()
+        
+
+        @self.app.post("/identity_service")
+        async def receive_permission(msg: EncodingMsg):
+            print("post, identity rec")
+            self.ident_serv.save_encoding(msg.name, msg.encoding)
+        
+        # @self.app.get("/identity_service")
+        # async def send_recognised_names(self):
+        #     return self.ident_serv.data_to_access_servise()
+        
+
 
 class IdentityService:
     '''
@@ -22,20 +40,50 @@ class IdentityService:
     def __init__(self):
         self.app = FastAPI()
         self.video_capture = self.get_camera()
-        self.known_face_encodings, self.known_face_names = self.load_encodings()
 
-        self.to_logging_service = []
+        self.to_logging_service = {}
         self.to_access_service = []
 
         self.client = hazelcast.HazelcastClient()
         self.encodings_map = self.client.get_map("encodings-map").blocking()
 
-        # TODO send to access and logging service once in a while and clear
+        self.logging_url = "http://127.0.0.1:8000"
+        self.access_url = "http://127.0.0.1:8000/access_service_check"
 
-    def register_encoding(self, ref_img_path, name):
-        person_image = face_recognition.load_image_file(ref_img_path)
-        person_face_encoding = face_recognition.face_encodings(person_image, model="large", num_jitters=100)[0]
-        self.encodings_map.put(name, str(person_face_encoding))
+
+
+    def data_to_access_service(self):
+        return self.to_access_service
+    
+    def data_to_logging_service(self):
+        return self.to_logging_service
+
+    def save_encoding(self, name, enc):
+        self.encodings_map.put(name, enc)
+
+    # TODO: think about it (should it be by request or every couple of seconds)
+    # TODO x2: maybe one method for both requests?
+    # TODO x3: should it be in a loop?
+    def send_logs(self, names, time_ap):
+        print("Log")
+        for name in names:
+            requests.post(self.logging_url, json={
+                "person_id": name,
+                "camera_id": "0",           # dummy
+                "location": "universe",     # dummy
+                "appearance_time": time_ap
+            })
+
+    def send_recognised_names(self, names, time_ap):
+        print("names")
+        for name in names:
+            requests.post(self.access_url, json={
+                "person_id": name,
+                "camera_id": "0",           # dummy
+                "location": "universe",     # dummy
+                "appearance_time": time_ap
+            })
+
 
 
     @staticmethod
@@ -45,15 +93,6 @@ class IdentityService:
         """
         # TODO: read id from database (get stream from video stream service)
         return cv2.VideoCapture(0)
-
-    @staticmethod
-    def load_encodings():
-        # TODO: read encodings from hazelcast shtuky
-
-        with open("temp_database.csv", "rb") as data:
-            all_data = pickle.load(data)
-
-        return np.asarray(list(all_data.values())), np.asarray(list(all_data.keys()))
 
 
     def detection_loop(self):
@@ -76,8 +115,13 @@ class IdentityService:
 
                 face_names = []
                 for face_encoding in face_encodings:
+                    # TODO: hazelcast but seems baaad
                     known_faces_and_names = np.asarray(self.encodings_map.entry_set())
                     known_enc = []
+
+                    if len(known_faces_and_names) == 0:
+                        print("No names were registered!")
+                        break
 
                     for i, (_, elem) in enumerate(known_faces_and_names):
                         known_enc.append(np.fromstring(elem[1:-1], sep=" "))
@@ -93,11 +137,17 @@ class IdentityService:
 
                     face_names.append(name)
                 
-                # TODO: send to logging service and access control
                 print(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_names}")
-                self.to_logging_service.append(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_names}")
-                self.to_access_service.append([now.strftime('%d/%m/%Y %H:%M:%S'), face_names])
-                    
+                # self.to_logging_service.append(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_names}")
+                
+                # TODO: add camera_id and location as in Appearance msg 
+                # TODO x2: maybe not requests?
+                if face_names:
+                    self.send_logs(face_names, now.strftime('%d/%m/%Y %H:%M:%S'))
+                    # self.to_access_service.append([now.strftime('%d/%m/%Y %H:%M:%S'), face_names])
+                    self.send_recognised_names(face_names, now.strftime('%d/%m/%Y %H:%M:%S'))
+
+
             process_this_frame = not process_this_frame
 
             for (top, right, bottom, left), name in zip(face_locations, face_names):
@@ -122,6 +172,7 @@ class IdentityService:
         cv2.destroyAllWindows()
         self.client.shutdown()
 
-serv = IdentityService()
-serv.register_encoding("photo_2023-02-22_21-33-46.jpg", "Dasha")
-serv.detection_loop()
+serv = IdentityController()
+uvicorn.run(serv.app, host = "127.0.0.1", port=8001)
+
+
