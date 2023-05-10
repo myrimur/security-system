@@ -15,14 +15,24 @@ class AccessControlController:
         
         @self.app.post("/access_service_check")
         async def check_permission(msg: Appearance):
+            '''
+            POST request that is received from identity service
+            
+            Check person's permission
+            '''
             res = self.access_serv.check_person(msg.person_id)
             print(f"Person {msg.person_id} detected at {msg.appearance_time}, conclusion={res}")
 
+
         @self.app.post("/access_service")
         def send_encoding_data(msg: Permission):
+            '''
+            POST request that is received when new encoding needs to be saved
+
+            *not sure if to do this like this or not*
+            '''
             enc = self.access_serv.get_encodings(msg.image_path)
             self.access_serv.save_permission(msg.name, msg.permission)
-            print("post, acces")
             requests.post(self.identity_url, json={"name": msg.name,
                                                     "encoding": str(enc)})
 
@@ -32,12 +42,20 @@ class AccessControlService:
         pass 
 
     def get_encodings(self, ref_img_path):
+        '''
+        return encoding from an image
+        '''
         person_image = face_recognition.load_image_file(ref_img_path)
         person_face_encoding = face_recognition.face_encodings(person_image, model="large", num_jitters=100)[0]
 
         return person_face_encoding
     
     def check_person(self, name):
+        '''
+        check person's permissions or if unknown 
+
+        *will be changed*
+        '''
         # TODO: MySQL
         with open("temp_permission.csv", 'r', encoding="utf-8") as perms:
             lines = perms.readlines()
@@ -67,5 +85,3 @@ class AccessControlService:
 
 acc = AccessControlController()
 uvicorn.run(acc.app)
-
-# acc.send_encoding_data("photo_2023-02-22_21-33-46.jpg", "Dasha", "Allowed")

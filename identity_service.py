@@ -18,19 +18,13 @@ class IdentityController:
         self.access_url = "http://127.0.0.1:8000/access_service"
 
         # TODO: ¿stupid¿
-        t = Thread(target=self.ident_serv.detection_loop)
+        t = Thread(target=self.ident_serv.detection_loop, daemon=True)
         t.start()
         
 
         @self.app.post("/identity_service")
         async def receive_permission(msg: EncodingMsg):
-            print("post, identity rec")
             self.ident_serv.save_encoding(msg.name, msg.encoding)
-        
-        # @self.app.get("/identity_service")
-        # async def send_recognised_names(self):
-        #     return self.ident_serv.data_to_access_servise()
-        
 
 
 class IdentityService:
@@ -38,11 +32,7 @@ class IdentityService:
     inspired by documentation of face recognition
     '''
     def __init__(self):
-        self.app = FastAPI()
         self.video_capture = self.get_camera()
-
-        self.to_logging_service = {}
-        self.to_access_service = []
 
         self.client = hazelcast.HazelcastClient()
         self.encodings_map = self.client.get_map("encodings-map").blocking()
@@ -50,22 +40,14 @@ class IdentityService:
         self.logging_url = "http://127.0.0.1:8000"
         self.access_url = "http://127.0.0.1:8000/access_service_check"
 
-
-
-    def data_to_access_service(self):
-        return self.to_access_service
-    
-    def data_to_logging_service(self):
-        return self.to_logging_service
-
     def save_encoding(self, name, enc):
         self.encodings_map.put(name, enc)
 
+
     # TODO: think about it (should it be by request or every couple of seconds)
-    # TODO x2: maybe one method for both requests?
-    # TODO x3: should it be in a loop?
+    # TODO x2: should it be in a loop?
+    # TODO x3: should every name be a different request?
     def send_logs(self, names, time_ap):
-        print("Log")
         for name in names:
             requests.post(self.logging_url, json={
                 "person_id": name,
@@ -75,7 +57,6 @@ class IdentityService:
             })
 
     def send_recognised_names(self, names, time_ap):
-        print("names")
         for name in names:
             requests.post(self.access_url, json={
                 "person_id": name,
@@ -88,10 +69,7 @@ class IdentityService:
 
     @staticmethod
     def get_camera():
-        """
-        or get frame from message queue?
-        """
-        # TODO: read id from database (get stream from video stream service)
+        # TODO: receive strean from message queue
         return cv2.VideoCapture(0)
 
 
@@ -138,16 +116,14 @@ class IdentityService:
                     face_names.append(name)
                 
                 print(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_names}")
-                # self.to_logging_service.append(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_names}")
                 
                 # TODO: add camera_id and location as in Appearance msg 
                 # TODO x2: maybe not requests?
                 if face_names:
                     self.send_logs(face_names, now.strftime('%d/%m/%Y %H:%M:%S'))
-                    # self.to_access_service.append([now.strftime('%d/%m/%Y %H:%M:%S'), face_names])
                     self.send_recognised_names(face_names, now.strftime('%d/%m/%Y %H:%M:%S'))
 
-
+            # TODO: maybe will be managed by message queue
             process_this_frame = not process_this_frame
 
             for (top, right, bottom, left), name in zip(face_locations, face_names):
@@ -174,5 +150,3 @@ class IdentityService:
 
 serv = IdentityController()
 uvicorn.run(serv.app, host = "127.0.0.1", port=8001)
-
-
