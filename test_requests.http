@@ -5,7 +5,7 @@ Content-Type: application/json
 {
     "image_path" : "photo_2023-02-22_21-33-46.jpg",
     "name": "Dasha",
-    "permission": "Allowed"
+    "permission": 0
 }
 
 ###

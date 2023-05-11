@@ -1,9 +1,12 @@
-
 import face_recognition
 from fastapi import FastAPI
 from msgs import Appearance, Permission
 import requests
 import uvicorn
+from database_class import PermissionsDB
+
+DEBUG = False
+
 
 class AccessControlController:
     def __init__(self):
@@ -39,7 +42,8 @@ class AccessControlController:
 
 class AccessControlService:
     def __init__(self):
-        pass 
+        if not DEBUG:
+            self.perm_database = PermissionsDB()
 
     def get_encodings(self, ref_img_path):
         '''
@@ -56,31 +60,37 @@ class AccessControlService:
 
         *will be changed*
         '''
-        # TODO: MySQL
-        with open("temp_permission.csv", 'r', encoding="utf-8") as perms:
-            lines = perms.readlines()
+        if DEBUG:
+            with open("temp_permission.csv", 'r', encoding="utf-8") as perms:
+                lines = perms.readlines()
 
-        perm_dict = {}
-        for line in lines:
-            temp = line.strip().split(',')
-            perm_dict[temp[0]] = temp[1]
+                perm_dict = dict()
+                for line in lines:
+                    temp = line.strip().split(',')
+                    perm_dict[temp[0]] = temp[1]
+        else:
+
+            result = self.perm_database.select_person(name)[:][1:]
+
+            perm_dict = dict(result)
 
         if name == "Unknown":
             return "very bad"
 
         #TODO: come up with permissions
-        if perm_dict[name] == "Allowed":
+        if perm_dict[name] == 0:
             return "good"
-        elif perm_dict[name] == "Not allowed":
+        elif perm_dict[name] == 1:
             return "bad"
         else:
             return "so so"
     
     def save_permission(self, name, permission):
-        # TODO: MySQL
-        with open("temp_permission.csv", 'a', encoding="utf-8") as perms:
-            perms.writelines(f"{name},{permission}\n")
-
+        if DEBUG:
+            with open("temp_permission.csv", 'a', encoding="utf-8") as perms:
+                perms.writelines(f"{name},{permission}\n")
+        else:
+            self.perm_database.insert_into_bd(name, permission)
 
 
 acc = AccessControlController()

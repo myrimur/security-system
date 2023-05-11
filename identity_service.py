@@ -10,6 +10,15 @@ from msgs import EncodingMsg
 import uvicorn
 from threading import Thread
 
+
+#     !!!!              !!!!
+#     !!!!              !!!! 
+#     !!!!  Hazelcast!  !!!!
+#     !!!!              !!!!
+#
+#     !!!!              !!!!
+
+
 class IdentityController:
     def __init__(self):
         self.ident_serv = IdentityService()
