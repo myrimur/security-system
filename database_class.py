@@ -14,22 +14,22 @@ class PermissionsDB:
         self.__set_up_database()
 
     def __set_up_database(self):
-        self.cursor_db.execute("CREATE TABLE IF NOT EXISTS permissions (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), permission INT)")
+        self.cursor_db.execute("CREATE TABLE IF NOT EXISTS permissions (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), camera_id INT, permission INT)")
 
     
     # TODO: multiple insertion?
-    def insert_into_bd(self, name, permission):
-        to_exec = "INSERT INTO permissions (name, permission) VALUES (%s, %s)"
-        values = (name, permission)
+    def insert_into_bd(self, name, permission, camera_id):
+        to_exec = "INSERT INTO permissions (name, camera_id, permission) VALUES (%s, %s, %s)"
+        values = (name, camera_id, permission)
 
         self.cursor_db.execute(to_exec, values)
 
         self.db_perms.commit()
 
     
-    def update_permission(self, name, new_permission):
-        to_exec = "UPDATE permissions SET permission = %s WHERE name = '%s'"
-        values = (new_permission, name)
+    def update_permission(self, name, camera_id, new_permission):
+        to_exec = "UPDATE permissions SET permission = %s WHERE name = '%s' AND camera_id = '%s'"
+        values = (new_permission, name, camera_id)
 
         self.cursor_db.execute(to_exec, values)
 
@@ -45,9 +45,9 @@ class PermissionsDB:
 
         self.db_perms.commit()
 
-    def select_person(self, name):
-        to_exec = "SELECT name, permission FROM permissions WHERE name IN (%s)"
-        values = (name,)
+    def select_person(self, name, camera_id):
+        to_exec = "SELECT name, permission FROM permissions WHERE name IN (%s) AND camera_id IN (%s)"
+        values = (name, camera_id)
 
         self.cursor_db.execute(to_exec, values)
 

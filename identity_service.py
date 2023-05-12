@@ -18,6 +18,11 @@ from threading import Thread
 #
 #     !!!!              !!!!
 
+#
+#
+# won't work without access service - change ports in urls
+#
+#
 
 class IdentityController:
     def __init__(self):
