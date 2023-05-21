@@ -3,45 +3,29 @@
 POST http://127.0.0.1:8004
 Content-Type: application/json
 
-{
+[
+  {
     "appearance_time": "2020-01-01 00:00:00",
     "location": "office",
     "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
     "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
-}
-
-###
-
-POST http://127.0.0.1:8004
-Content-Type: application/json
-
-{
+  },
+  {
     "appearance_time": "2020-01-01 00:00:01",
     "location": "office",
     "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
     "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
-}
-
-###
-
-POST http://127.0.0.1:8004
-Content-Type: application/json
-
-{
+  },
+  {
     "appearance_time": "2020-01-01 00:00:02",
     "location": "office",
     "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
     "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
-}
-
-###
-
-POST http://127.0.0.1:8004
-Content-Type: application/json
-
-{
+  },
+  {
     "appearance_time": "2020-01-01 00:00:02",
     "location": "office",
     "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376da",
     "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
-}
+  }
+]

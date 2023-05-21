@@ -25,16 +25,22 @@ async def healthcheck():
 
 
 @app.post("/")
-async def store_appearance(appearance: Appearance):
-    person_id = appearance.person_id
-    camera_id = appearance.camera_id
-    location = appearance.location
-    appearance_time = appearance.appearance_time
+async def store_appearance(appearances: list[Appearance]):
+    futures = []
+    for appearance in appearances:
+        person_id = appearance.person_id
+        camera_id = appearance.camera_id
+        location = appearance.location
+        appearance_time = appearance.appearance_time
 
-    query = lambda table: f"INSERT INTO {table} (person_id, camera_id, location, appearance_time) VALUES ({person_id}, {camera_id}, '{location}', '{appearance_time}')"
-    session.execute(query("by_person_id"))
-    session.execute(query("by_location"))
-    session.execute(query("by_camera_id"))
+        def query(table):
+            return f"INSERT INTO {table} (person_id, camera_id, location, appearance_time) VALUES ({person_id}, {camera_id}, '{location}', '{appearance_time}')"
+
+        for table in ["by_person_id", "by_location", "by_camera_id"]:
+            futures.append(session.execute_async(query(table)))
+
+    for future in futures:
+        future.result()
 
     return {"message": "Data stored successfully."}
 
@@ -53,6 +59,7 @@ async def get_appearances_by_person_id(person_id: str):
 @app.get("/{day}")
 async def get(day: str):
     return list(session.execute(f"SELECT * FROM by_person_id WHERE appearance_time >= '{day}' AND appearance_time <= '{day} 23:59:59'"))
+
 
 @app.get("/appearances_by_person_id/{person_id}/{day}")
 async def get_appearances_by_person_id(person_id: str, day: str):
