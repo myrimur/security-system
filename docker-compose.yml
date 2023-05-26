@@ -17,7 +17,6 @@ services:
     ports:
       - "8004:8004"
     volumes:
-#      - ./logging_service/results:/opt/app/results
       - ./logging_service:/opt/app
 
   cassandra-node-1:
@@ -54,13 +53,9 @@ services:
       logging-service:
         condition: service_healthy
     command: /bin/bash -c "spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.12:3.3.0 --master spark://face-recognition-spark:7077 --deploy-mode client /opt/app/analytics.py"
-#    command: /bin/bash -c "spark-submit --master spark://face-recognition-spark:7077 --deploy-mode client /opt/app/analytics.py"
     networks:
       - face-recognition-network
     volumes:
-#      - analytics-results:/opt/app/results
-#      - ./logging_service/results:/opt/app/results
-#      - ./logging_service/analytics.py:/opt/app/analytics.py
       - ./logging_service:/opt/app
 
   spark:
@@ -76,8 +71,6 @@ services:
       - SPARK_SSL_ENABLED=no
     ports:
       - '8080:8080'
-    volumes:
-      - ./logging_service:/opt/app
 
 
   spark-worker:
@@ -95,12 +88,8 @@ services:
       - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
       - SPARK_SSL_ENABLED=no
     volumes:
-#      - ./logging_service/results:/opt/app/results
       - ./logging_service:/opt/app
 
 networks:
   face-recognition-network:
     name: face-recognition-network
-
-#volumes:
-#  analytics-results:
