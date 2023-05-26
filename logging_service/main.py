@@ -1,4 +1,6 @@
-from datetime import datetime
+from glob import glob
+from functools import reduce
+from collections import defaultdict
 from cassandra.cluster import Cluster
 from cassandra.query import dict_factory
 from fastapi import FastAPI
@@ -59,6 +61,33 @@ async def get_appearances_by_person_id(person_id: str):
 @app.get("/{day}")
 async def get(day: str):
     return list(session.execute(f"SELECT * FROM by_person_id WHERE appearance_time >= '{day}' AND appearance_time <= '{day} 23:59:59'"))
+
+
+@app.get("/")
+async def get():
+    print(glob('/opt/app/*'))
+    print(glob('/opt/app/results/*'))
+    print(glob('/opt/app/results/results/*'))
+    print(glob('/opt/app/results/results/*.json'))
+    #
+    f = open("/opt/app/results/demofile2.txt", "w")
+    f.write("Now the file has more content!")
+    f.close()
+    try:
+        with open(glob('/opt/app/results/results/*.json')[0]) as f:
+            # return reduce(lambda a, b:  [Counter(eval(line.rstrip())) for line in f])
+            dicts = [eval(line.rstrip()) for line in f]
+            merged = defaultdict(list)
+            for d in dicts:
+                merged[d['location']] += [{d['person_id']: d['total_appearances']}]
+            return merged
+        # with open("/opt/app/results", "r") as json_file:
+        #     return json.load(json_file)
+        # return spark.read.json("/opt/app/results").toJSON().collect()
+    except IndexError:
+        return {"message": "No analytics yet."}
+    # f = open("/results/results.csv", "r")
+    # return [f.read()]
 
 
 @app.get("/appearances_by_person_id/{person_id}/{day}")

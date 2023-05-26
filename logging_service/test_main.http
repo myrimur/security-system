@@ -29,3 +29,11 @@ Content-Type: application/json
     "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
   }
 ]
+
+###
+GET http://127.0.0.1:8004/appearances_by_location/office
+Accept: application/json
+
+###
+GET http://127.0.0.1:8004
+Accept: application/json
