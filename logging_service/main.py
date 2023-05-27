@@ -1,5 +1,4 @@
 from glob import glob
-from functools import reduce
 from collections import defaultdict
 from cassandra.cluster import Cluster
 from cassandra.query import dict_factory
@@ -29,17 +28,12 @@ async def healthcheck():
 @app.post("/")
 async def store_appearance(appearances: list[Appearance]):
     futures = []
-    for appearance in appearances:
-        person_id = appearance.person_id
-        camera_id = appearance.camera_id
-        location = appearance.location
-        appearance_time = appearance.appearance_time
-
-        def query(table):
-            return f"INSERT INTO {table} (person_id, camera_id, location, appearance_time) VALUES ({person_id}, {camera_id}, '{location}', '{appearance_time}')"
-
+    for a in appearances:
         for table in ["by_person_id", "by_location", "by_camera_id"]:
-            futures.append(session.execute_async(query(table)))
+            futures.append(session.execute_async(
+                f"INSERT INTO {table} (person_id, camera_id, location, appearance_time)"
+                f" VALUES ({a.person_id}, {a.camera_id}, '{a.location}', '{a.appearance_time}')"
+            ))
 
     for future in futures:
         future.result()
