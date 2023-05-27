@@ -1,10 +1,5 @@
 from kafka import KafkaConsumer
-from json import loads
-import base64
-import cv2
 import pickle
-from io import BytesIO
-import numpy as np
 from msgs import FrameEncodings
 
 print('test')
