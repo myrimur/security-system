@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(1, '../')
+
 import face_recognition
 from fastapi import FastAPI
 from msgs import Appearance, Permission, CameraInfo

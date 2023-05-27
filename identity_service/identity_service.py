@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(1, '../')
+
 import requests
 from fastapi import FastAPI
 import face_recognition

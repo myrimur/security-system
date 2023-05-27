@@ -1,4 +1,0 @@
-hazelcast:
-  map:
-    objectMap:
-      in-memory-format: BINARY
