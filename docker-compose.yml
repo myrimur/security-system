@@ -34,6 +34,44 @@ services:
     networks:
       - face-recognition-network
 
+  cassandra-node-2:
+    container_name: cassandra-node-2
+    image: "cassandra:latest"
+    depends_on:
+      cassandra-node-1:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: always
+    environment:
+      - "MAX_HEAP_SIZE=256M"
+      - "HEAP_NEWSIZE=128M"
+      - CASSANDRA_SEEDS=cassandra-node-1
+    networks:
+      - face-recognition-network
+
+  cassandra-node-3:
+    container_name: cassandra-node-3
+    image: "cassandra:latest"
+    depends_on:
+      cassandra-node-2:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: always
+    environment:
+      - "MAX_HEAP_SIZE=256M"
+      - "HEAP_NEWSIZE=128M"
+      - CASSANDRA_SEEDS=cassandra-node-2
+    networks:
+      - face-recognition-network
+
   cassandra-ddl:
     container_name: face-recognition-cassandra-ddl
     image: "cassandra:latest"

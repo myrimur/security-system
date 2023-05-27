@@ -15,7 +15,9 @@ class Appearance(BaseModel):
     appearance_time: str
 
 
-cluster = Cluster(['face-recognition-cassandra-node-1'])
+cluster = Cluster(
+    ['face-recognition-cassandra-node-1', 'face-recognition-cassandra-node-2', 'face-recognition-cassandra-node-3']
+)
 session = cluster.connect('appearances')
 session.row_factory = dict_factory
 
