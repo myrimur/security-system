@@ -69,17 +69,6 @@ class AccessControlController:
                 print(f"Person {msg.name} and camera {msg.camera_id} are in bd already")
 
 
-        @self.app.post("/access_service_add_camera")
-        def save_camera(msg: CameraInfo):
-            '''
-            POST request that is received when new encoding needs to be saved
-
-            *not sure if to do this like this or not*
-            '''
-            requests.post(self.camera_serv_url, json={"camera_id": msg.camera_id,
-                                                      "location": msg.location})
-
-
 class AccessControlService:
     def __init__(self):
         self.perm_database = PermissionsDB()

@@ -7,7 +7,6 @@ import face_recognition
 import cv2
 import numpy as np
 from datetime import datetime
-import requests
 import hazelcast
 from msgs import EncodingMsg
 import uvicorn
@@ -15,19 +14,6 @@ from threading import Thread
 
 from uuid import uuid4
 
-
-#     !!!!              !!!!
-#     !!!!              !!!! 
-#     !!!!  Hazelcast!  !!!!
-#     !!!!              !!!!
-#
-#     !!!!              !!!!
-
-#
-#
-# won't work without access service - change ports in urls
-#
-#
 
 class IdentityController:
     def __init__(self):
@@ -59,7 +45,6 @@ class IdentityService:
         self.access_url = "http://127.0.0.1:8000/access_service_check"
 
     def save_encoding(self, uuid_id, enc):
-        print(f"identity debug: {uuid_id}, {type(uuid_id)}")
         self.encodings_map.put(uuid_id, enc)
 
 
