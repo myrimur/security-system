@@ -13,4 +13,3 @@ while True:
     reduced_df = mapped_df.groupBy("location", "person_id").agg(sum("appearance_count").alias("total_appearances"))
     reduced_df.repartition(1).write.json("/opt/app/results", mode="overwrite")
     sleep(60)
-
