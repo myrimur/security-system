@@ -88,7 +88,7 @@ services:
     container_name: face-recognition-logging-analytics
     image: docker.io/bitnami/spark:3.3.0
     depends_on:
-      logging-service:
+      cassandra-node-1:
         condition: service_healthy
     command: /bin/bash -c "spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.12:3.3.0 --master spark://face-recognition-spark:7077 --deploy-mode client /opt/app/analytics.py"
     networks:
@@ -127,6 +127,21 @@ services:
       - SPARK_SSL_ENABLED=no
     volumes:
       - ./logging_service:/opt/app
+
+  access-service:
+    container_name: face-recognition-access-service
+    build: ./access_service
+    networks:
+      - face-recognition-network
+
+  identity-service:
+    container_name: face-recognition-identity-service
+    build: ./identity_service
+    depends_on:
+      cassandra-node-1:
+        condition: service_healthy
+    networks:
+      - face-recognition-network
 
 networks:
   face-recognition-network:
