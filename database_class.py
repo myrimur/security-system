@@ -14,17 +14,25 @@ class PermissionsDB:
         self.__set_up_database()
 
     def __set_up_database(self):
-        self.cursor_db.execute("CREATE TABLE IF NOT EXISTS permissions (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), camera_id INT, permission INT)")
+        ###### FOR DEBUG ######
+        self.cursor_db.execute("DROP TABLE IF EXISTS permissions")
+        ###### FOR DEBUG ######
+
+        self.cursor_db.execute("CREATE TABLE IF NOT EXISTS permissions (id INT AUTO_INCREMENT PRIMARY KEY, uuid VARCHAR(36), name VARCHAR(255), camera_id INT, permission INT)")
 
     
     # TODO: multiple insertion?
     def insert_into_bd(self, name, permission, camera_id):
-        to_exec = "INSERT INTO permissions (name, camera_id, permission) VALUES (%s, %s, %s)"
-        values = (name, camera_id, permission)
+        self.cursor_db.execute('SELECT UUID()')
+        uuid, = self.cursor_db.fetchone()
+
+        to_exec = "INSERT INTO permissions (uuid, name, camera_id, permission) VALUES (%s, %s, %s, %s)"
+        values = (uuid, name, camera_id, permission)
 
         self.cursor_db.execute(to_exec, values)
 
         self.db_perms.commit()
+        return uuid
 
     
     def update_permission(self, name, camera_id, new_permission):
@@ -52,3 +60,12 @@ class PermissionsDB:
         self.cursor_db.execute(to_exec, values)
 
         return self.cursor_db.fetchall()
+    
+    def select_uuid(self, uuid, camera_id):
+        to_exec = "SELECT name, permission FROM permissions WHERE uuid IN (%s) AND camera_id IN (%s)"
+        values = (uuid, camera_id)
+
+        self.cursor_db.execute(to_exec, values)
+
+        return self.cursor_db.fetchall()
+    

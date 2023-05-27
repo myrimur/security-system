@@ -31,14 +31,13 @@ class IdentityController:
 
         self.access_url = "http://127.0.0.1:8000/access_service"
 
-        # TODO: ¿stupid¿
         t = Thread(target=self.ident_serv.detection_loop, daemon=True)
         t.start()
         
 
         @self.app.post("/identity_service")
         async def receive_permission(msg: EncodingMsg):
-            self.ident_serv.save_encoding(msg.name, msg.encoding)
+            self.ident_serv.save_encoding(msg.person_id, msg.encoding)
 
 
 class IdentityService:
@@ -54,30 +53,33 @@ class IdentityService:
         self.logging_url = "http://127.0.0.1:8000"
         self.access_url = "http://127.0.0.1:8000/access_service_check"
 
-    def save_encoding(self, name, enc):
-        self.encodings_map.put(name, enc)
+    def save_encoding(self, uuid, enc):
+        print(f"identity debug: {uuid}, {type(uuid)}")
+        self.encodings_map.put(uuid, enc)
 
 
-    # TODO: think about it (should it be by request or every couple of seconds)
-    # TODO x2: should it be in a loop?
-    # TODO x3: should every name be a different request?
-    def send_logs(self, names, time_ap):
-        for name in names:
-            requests.post(self.logging_url, json={
-                "person_id": name,
+    def send_logs(self, uuids, time_ap):
+        lst = [{
+                "person_id": uuid,
                 "camera_id": "0",           # dummy
                 "location": "universe",     # dummy
                 "appearance_time": time_ap
-            })
+               } for uuid in uuids]
+        headers = {'Content-Type': 'application/json'}
 
-    def send_recognised_names(self, names, time_ap):
-        for name in names:
-            requests.post(self.access_url, json={
-                "person_id": name,
+        requests.post(self.logging_url, json=lst, headers=headers)
+
+    def send_recognised_names(self, uuids, time_ap):
+        lst = [{
+                "person_id": uuid,
                 "camera_id": "0",           # dummy
                 "location": "universe",     # dummy
                 "appearance_time": time_ap
-            })
+               } for uuid in uuids]
+
+        headers = {'Content-Type': 'application/json'}
+        
+        requests.post(self.access_url, json=lst, headers=headers)
 
 
 
@@ -90,7 +92,7 @@ class IdentityService:
     def detection_loop(self):
         face_locations = []
         face_encodings = []
-        face_names = []
+        face_uuids = []
         process_this_frame = True
 
         while True:
@@ -105,14 +107,14 @@ class IdentityService:
                 face_locations = face_recognition.face_locations(rgb_small_frame)
                 face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
 
-                face_names = []
+                face_uuids = []
                 for face_encoding in face_encodings:
-                    # TODO: hazelcast but seems baaad
                     known_faces_and_names = np.asarray(self.encodings_map.entry_set())
                     known_enc = []
 
                     if len(known_faces_and_names) == 0:
                         print("No names were registered!")
+                        face_uuids.append("Unknown")
                         break
 
                     for i, (_, elem) in enumerate(known_faces_and_names):
@@ -127,20 +129,19 @@ class IdentityService:
                         name = known_faces_and_names[best_match_index, 0]
 
 
-                    face_names.append(name)
+                    face_uuids.append(name)
                 
-                print(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_names}")
+                print(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_uuids}")
                 
                 # TODO: add camera_id and location as in Appearance msg 
-                # TODO x2: maybe not requests?
-                if face_names:
-                    self.send_logs(face_names, now.strftime('%d/%m/%Y %H:%M:%S'))
-                    self.send_recognised_names(face_names, now.strftime('%d/%m/%Y %H:%M:%S'))
+                if face_uuids:
+                    self.send_logs(face_uuids, now.strftime('%d/%m/%Y %H:%M:%S'))
+                    self.send_recognised_names(face_uuids, now.strftime('%d/%m/%Y %H:%M:%S'))
 
             # TODO: maybe will be managed by message queue
             process_this_frame = not process_this_frame
 
-            for (top, right, bottom, left), name in zip(face_locations, face_names):
+            for (top, right, bottom, left), name in zip(face_locations, face_uuids):
                 top *= 4
                 right *= 4
                 bottom *= 4

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 
 
 class EncodingMsg(BaseModel):
-    name: str 
+    person_id: str 
     encoding: str
 
 
@@ -21,6 +21,7 @@ class Permission(BaseModel):
     
 class Notification(BaseModel):
     person_id: str
+    person_name: str
     camera_id: str
     location: str
     appearance_time: str
