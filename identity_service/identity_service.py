@@ -13,6 +13,8 @@ from msgs import EncodingMsg
 import uvicorn
 from threading import Thread
 
+from uuid import uuid4
+
 
 #     !!!!              !!!!
 #     !!!!              !!!! 
@@ -53,33 +55,41 @@ class IdentityService:
         self.client = hazelcast.HazelcastClient()
         self.encodings_map = self.client.get_map("encodings-map").blocking()
 
-        self.logging_url = "http://127.0.0.1:8000"
+        self.logging_url = "http://10.10.227.169:8004"
         self.access_url = "http://127.0.0.1:8000/access_service_check"
 
-    def save_encoding(self, uuid, enc):
-        print(f"identity debug: {uuid}, {type(uuid)}")
-        self.encodings_map.put(uuid, enc)
+    def save_encoding(self, uuid_id, enc):
+        print(f"identity debug: {uuid_id}, {type(uuid_id)}")
+        self.encodings_map.put(uuid_id, enc)
 
 
     def send_logs(self, uuids, time_ap):
-        lst = [{
-                "person_id": uuid,
-                "camera_id": "0",           # dummy
-                "location": "universe",     # dummy
-                "appearance_time": time_ap
-               } for uuid in uuids]
+        lst = []
+        for uuid_id in uuids:
+            if uuid_id == "Unknown":
+                uuid_id = str(uuid4())
+            lst.append({
+            "person_id": uuid_id,
+            "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb",           # dummy
+            "location": "it space",     # dummy
+            "appearance_time": time_ap
+            })
+
         headers = {'Content-Type': 'application/json'}
 
         requests.post(self.logging_url, json=lst, headers=headers)
 
     def send_recognised_names(self, uuids, time_ap):
-        lst = [{
-                "person_id": uuid,
-                "camera_id": "0",           # dummy
-                "location": "universe",     # dummy
-                "appearance_time": time_ap
-               } for uuid in uuids]
-
+        lst = []
+        for uuid_id in uuids:
+            if uuid_id == "Unknown":
+                uuid_id = str(uuid4())
+            lst.append({
+            "person_id": uuid_id,
+            "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb",           # dummy
+            "location": "it space",     # dummy
+            "appearance_time": time_ap
+            })
         headers = {'Content-Type': 'application/json'}
         
         requests.post(self.access_url, json=lst, headers=headers)
@@ -134,12 +144,12 @@ class IdentityService:
 
                     face_uuids.append(name)
                 
-                print(f"Date and time: {now.strftime('%d/%m/%Y %H:%M:%S')} Faces detected: {face_uuids}")
+                print(f"Date and time: {now.strftime('%Y-%m-%d %H:%M:%S')} Faces detected: {face_uuids}")
                 
                 # TODO: add camera_id and location as in Appearance msg 
                 if face_uuids:
-                    self.send_logs(face_uuids, now.strftime('%d/%m/%Y %H:%M:%S'))
-                    self.send_recognised_names(face_uuids, now.strftime('%d/%m/%Y %H:%M:%S'))
+                    self.send_logs(face_uuids, now.strftime('%Y-%m-%d %H:%M:%S'))
+                    self.send_recognised_names(face_uuids, now.strftime('%Y-%m-%d %H:%M:%S'))
 
             # TODO: maybe will be managed by message queue
             process_this_frame = not process_this_frame

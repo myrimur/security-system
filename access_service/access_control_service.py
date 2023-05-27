@@ -30,7 +30,8 @@ class AccessControlController:
             '''
             to_send = []
             for msg in msgs:
-                if msg.person_id == "Unknown":
+                res = self.access_serv.check_person(msg.person_id, msg.camera_id)
+                if res == "Unknown":
                     to_send.append({"person_id": msg.person_id,
                                     "person_name": "Unknown",
                                     "camera_id": msg.camera_id,
@@ -38,8 +39,6 @@ class AccessControlController:
                                     "appearance_time": msg.appearance_time,
                                     "permission": "unknown person"})
                 else:
-                    res = self.access_serv.check_person(msg.person_id, msg.camera_id)
-
                     if res[0] != "ok":
                         to_send.append({"person_id": msg.person_id,
                                         "person_name": res[1],
@@ -104,9 +103,12 @@ class AccessControlService:
         '''
         result = self.perm_database.select_uuid(uuid, camera_id)
 
-        if len(result) > 1 or len(result) == 0:
+        if len(result) > 1:
             print(f"Error: too many entries in db: {result}")
             return "error"
+                
+        if len(result) == 0:
+            return ("Unknown")
         
         perm = result[0][1]
         name = result[0][0]
