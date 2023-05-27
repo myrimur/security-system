@@ -1,4 +1,8 @@
-
+*.jpg
+fun.py
+test.py
+test_2.py
+st.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
