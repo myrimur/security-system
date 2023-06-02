@@ -23,12 +23,12 @@ Content-Type: application/json
 
 ###
 
-GET http://10.10.227.169:8004
+GET http://127.0.0.1:8000/logging_service HTTP/1.1
 Accept: application/json
 
 ###
 
-POST http://10.10.227.169:8004
+POST http://127.0.0.1:8000/logging_service HTTP/1.1
 Content-Type: application/json
 
 [
