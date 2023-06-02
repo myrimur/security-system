@@ -137,9 +137,6 @@ services:
   identity-service:
     container_name: face-recognition-identity-service
     build: ./identity_service
-    depends_on:
-      cassandra-node-1:
-        condition: service_healthy
     networks:
       - face-recognition-network
 
