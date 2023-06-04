@@ -143,6 +143,9 @@ services:
     build:
       context: ./
       dockerfile: ./identity_service/Dockerfile
+    depends_on:
+      hazelcast-node-1:
+        condition: service_healthy
     networks:
       - face-recognition-network
     devices:
@@ -166,6 +169,20 @@ services:
     volumes:
       - ./access_service/data:/var/lib/mysql
       - ./access_service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - face-recognition-network
+
+  hazelcast-node-1:
+    container_name: face-recognition-hazelcast-node-1
+    image: hazelcast/hazelcast:latest
+    ports:
+      - "5701:5701"
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z -v -w5 localhost 5701" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - face-recognition-network
 

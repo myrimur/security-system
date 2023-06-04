@@ -38,7 +38,7 @@ class IdentityService:
     def __init__(self):
         self.video_capture = self.get_camera()
 
-        self.client = hazelcast.HazelcastClient()
+        self.client = hazelcast.HazelcastClient(cluster_members=['face-recognition-hazelcast-node-1:5701'])
         self.encodings_map = self.client.get_map("encodings-map").blocking()
 
         self.logging_url = "http://face-recognition-logging-service:8004"
@@ -139,27 +139,32 @@ class IdentityService:
             # TODO: maybe will be managed by message queue
             process_this_frame = not process_this_frame
 
-            for (top, right, bottom, left), name in zip(face_locations, face_uuids):
-                top *= 4
-                right *= 4
-                bottom *= 4
-                left *= 4
+            # for (top, right, bottom, left), name in zip(face_locations, face_uuids):
+            #     top *= 4
+            #     right *= 4
+            #     bottom *= 4
+            #     left *= 4
+            #
+            #     cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+            #
+            #     cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+            #     font = cv2.FONT_HERSHEY_DUPLEX
+            #     cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+            #
+            # # TODO: need to think if we want to see this
+            # cv2.imshow('Video', frame)
+            #
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #     break
 
-                cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+        # self.video_capture.release()
+        # cv2.destroyAllWindows()
+        # self.client.shutdown()
 
-                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-                font = cv2.FONT_HERSHEY_DUPLEX
-                cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-
-            # TODO: need to think if we want to see this
-            cv2.imshow('Video', frame)
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
+    def __del__(self):
         self.video_capture.release()
-        cv2.destroyAllWindows()
         self.client.shutdown()
+
 
 serv = IdentityController()
 uvicorn.run(serv.app, host = "127.0.0.1", port=8001)
