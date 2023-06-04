@@ -65,3 +65,35 @@ Content-Type: application/json
 {
     "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c"
 }
+
+
+# FOR VIDEO STREAM SERVICE
+
+###
+
+POST http://127.0.0.1:9000/synchronize_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "http://100.64.132.180:8080"
+}
+
+###
+
+POST http://127.0.0.1:9000/synchronize_camera_url HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "http://100.64.132.181:8080"
+}
+
+###
+
+POST http://127.0.0.1:9000/synchronize_inactive_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c"
+}
