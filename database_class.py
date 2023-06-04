@@ -4,7 +4,7 @@ import mysql.connector
 class PermissionsDB:
     def __init__(self):
         self.db_perms = mysql.connector.connect(
-            host="127.0.0.1",
+            host="face-recognition-permissions-db",
             user="daria",
             password="2222",
             database="permissions_db"

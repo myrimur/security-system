@@ -20,7 +20,7 @@ class IdentityController:
         self.ident_serv = IdentityService()
         self.app = FastAPI()
 
-        self.access_url = "http://127.0.0.1:8000/access_service"
+        self.access_url = "http://face-recognition-access-service:8000/access_service"
 
         t = Thread(target=self.ident_serv.detection_loop, daemon=True)
         t.start()
@@ -41,8 +41,8 @@ class IdentityService:
         self.client = hazelcast.HazelcastClient()
         self.encodings_map = self.client.get_map("encodings-map").blocking()
 
-        self.logging_url = "http://10.10.227.169:8004"
-        self.access_url = "http://127.0.0.1:8000/access_service_check"
+        self.logging_url = "http://face-recognition-logging-service:8004"
+        self.access_url = "http://face-recognition-access-service:8000/access_service_check"
 
     def save_encoding(self, uuid_id, enc):
         self.encodings_map.put(uuid_id, enc)

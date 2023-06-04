@@ -1,6 +1,7 @@
 import sys
 sys.path.insert(1, '../')
 
+from typing import List
 import face_recognition
 from fastapi import FastAPI
 from msgs import Appearance, Permission, CameraInfo
@@ -14,7 +15,7 @@ class AccessControlController:
         self.access_serv = AccessControlService()
         self.app = FastAPI()
 
-        self.identity_url = "http://127.0.0.1:8001/identity_service"
+        self.identity_url = "http://face-recognition-identity-service:8001/identity_service"
         self.notification_serv_url = "http://127.0.0.1:8002/notification"
 
         # TODO: change url to the real one
@@ -22,7 +23,7 @@ class AccessControlController:
 
 
         @self.app.post("/access_service_check")
-        async def check_permission(msgs: list[Appearance]):
+        async def check_permission(msgs: List[Appearance]):
             '''
             POST request that is received from identity service
             

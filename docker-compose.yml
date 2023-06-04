@@ -35,7 +35,7 @@ services:
       - face-recognition-network
 
   cassandra-node-2:
-    container_name: cassandra-node-2
+    container_name: face-recognition-cassandra-node-2
     image: "cassandra:latest"
     depends_on:
       cassandra-node-1:
@@ -54,7 +54,7 @@ services:
       - face-recognition-network
 
   cassandra-node-3:
-    container_name: cassandra-node-3
+    container_name: face-recognition-cassandra-node-3
     image: "cassandra:latest"
     depends_on:
       cassandra-node-2:
@@ -110,10 +110,9 @@ services:
     ports:
       - '8080:8080'
 
-
   spark-worker:
     container_name: face-recognition-spark-worker
-    image: docker.io/bitnami/spark:3
+    image: docker.io/bitnami/spark:3.3.0
     networks:
       - face-recognition-network
     environment:
@@ -130,15 +129,24 @@ services:
 
   access-service:
     container_name: face-recognition-access-service
-    build: ./access_service
+    build:
+      context: ./
+      dockerfile: ./access_service/Dockerfile
+    depends_on:
+      permissions-db:
+        condition: service_healthy
     networks:
       - face-recognition-network
 
   identity-service:
     container_name: face-recognition-identity-service
-    build: ./identity_service
+    build:
+      context: ./
+      dockerfile: ./identity_service/Dockerfile
     networks:
       - face-recognition-network
+    devices:
+      - /dev/video0:/dev/video0
 
   permissions-db:
     container_name: face-recognition-permissions-db
@@ -150,9 +158,16 @@ services:
       MYSQL_DATABASE: "permissions_db"
       MYSQL_USER: "daria"
       MYSQL_PASSWORD: "2222"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     volumes:
-      - ./access_control_service/data:/var/lib/mysql
+      - ./access_service/data:/var/lib/mysql
       - ./access_service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - face-recognition-network
 
 networks:
   face-recognition-network:
