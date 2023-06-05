@@ -3,7 +3,7 @@ import hazelcast
 
 class SynchronizedUrlsHazelcastMap:
     def __init__(self):
-        self.client = hazelcast.HazelcastClient()
+        self.client = hazelcast.HazelcastClient(cluster_members=["face-recognition-synchronized-urls-map-1"])
         self.urls_map = self.client.get_map("urls-map").blocking()
 
     def add_new(self, msg: CameraUrl):

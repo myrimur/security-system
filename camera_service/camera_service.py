@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from camera_msgs import CameraInfo, CameraUrl, CameraUrlList, CameraLocation, \
+from msgs import CameraInfo, CameraUrl, CameraUrlList, CameraLocation, \
                     CameraLocationList, CameraActivity, CameraId
 import uvicorn
 import requests
@@ -13,9 +13,9 @@ class CameraController:
         #create queue for lambda
 
         # TODO: change url to the real one
-        self.video_stream_service = "http://127.0.0.1:9000"
+        self.video_stream_service = "http://face-recognition-video-stream-service:9000"
         #add synchronize_new_camera and synchronize_removed_camera to access_control_service
-        self.access_control_service = "http://127.0.0.1:7000"
+        self.access_control_service = "http://face-recognition-access-service:8000"
 
         @self.app.get("/active_urls")
         def get_active_urls():

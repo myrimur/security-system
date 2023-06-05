@@ -33,13 +33,13 @@ class VideoStreamController:
 class VideoStreamService:
     def __init__(self):
         self.urls = SynchronizedUrlsHazelcastMap()
-        self.kafka_producer_ip = "localhost:9092"
+        self.kafka_producer_ip = "kafka:9092"
         self.skip_rate = 5
         self.producer = KafkaProducer(bootstrap_servers=self.kafka_producer_ip,
                                 value_serializer=lambda v: pickle.dumps(dict(v)))
         self.remove_rate = 1000
 
-    
+
     def synchronize_new_camera(self, msg: CameraUrl):
         self.urls.add_new(msg)
         print("SYNCHRONIZED")
@@ -85,14 +85,14 @@ class VideoStreamService:
 
 
     @asynccontextmanager
-    async def lifespan(self, app):        
+    async def lifespan(self, app):
         p = Process(target=self.kafka_producer_loop)
         p.start()
         yield
         p.join()
 
 if __name__ == "__main__":    
-    host="localhost"
-    port=9000
+    host="127.0.0.1"
+    port=8005
     acc = VideoStreamController()
     uvicorn.run(acc.app, host=host, port=port)

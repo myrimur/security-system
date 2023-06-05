@@ -1,5 +1,5 @@
 import mysql.connector
-from camera_msgs import CameraInfo, CameraUrl, CameraLocation, \
+from msgs import CameraInfo, CameraUrl, CameraLocation, \
                     CameraActivity, CameraId
 
 #https://www.geeksforgeeks.org/generating-random-ids-using-uuid-python/
@@ -8,7 +8,7 @@ import uuid
 class CamerasDB:
     def __init__(self):
         self.db_cameras = mysql.connector.connect(
-            host="127.0.0.1",
+            host="face-recognition-cameras-db",
             user="karyna",
             password="2222",
             database="cameras_db"
