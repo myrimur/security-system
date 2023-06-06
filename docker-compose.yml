@@ -135,6 +135,8 @@ services:
     depends_on:
       permissions-db:
         condition: service_healthy
+      identity-service:
+        condition: service_started
     networks:
       - face-recognition-network
 
@@ -145,6 +147,8 @@ services:
       dockerfile: ./identity_service/Dockerfile
     depends_on:
       hazelcast-node-1:
+        condition: service_healthy
+      logging-service:
         condition: service_healthy
     networks:
       - face-recognition-network
@@ -224,7 +228,7 @@ services:
     container_name: face-recognition-cameras-db
     image: mysql:latest
     ports:
-      - "3306:3306"
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "11111"
       MYSQL_DATABASE: "cameras_db"

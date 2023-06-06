@@ -33,7 +33,7 @@ class VideoStreamController:
 class VideoStreamService:
     def __init__(self):
         self.urls = SynchronizedUrlsHazelcastMap()
-        self.kafka_producer_ip = "kafka:9092"
+        self.kafka_producer_ip = "kafka:19092"
         self.skip_rate = 5
         self.producer = KafkaProducer(bootstrap_servers=self.kafka_producer_ip,
                                 value_serializer=lambda v: pickle.dumps(dict(v)))
