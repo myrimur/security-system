@@ -135,8 +135,6 @@ services:
     depends_on:
       permissions-db:
         condition: service_healthy
-      identity-service:
-        condition: service_started
     networks:
       - face-recognition-network
 
@@ -150,6 +148,8 @@ services:
         condition: service_healthy
       logging-service:
         condition: service_healthy
+      access-service:
+        condition: service_started
     networks:
       - face-recognition-network
     devices:
