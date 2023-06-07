@@ -170,6 +170,7 @@
 # uvicorn.run(serv.app, host = "127.0.0.1", port=8001)
 
 import sys
+from contextlib import asynccontextmanager
 
 sys.path.insert(1, '../')
 
@@ -182,6 +183,7 @@ import hazelcast
 from msgs import EncodingMsg
 import uvicorn
 from threading import Thread
+from multiprocessing import Process
 
 from uuid import uuid4
 
@@ -192,13 +194,15 @@ from msgs import FrameEncodings
 
 class IdentityController:
     def __init__(self):
+        print('IdentityController init')
         self.ident_serv = IdentityService()
-        self.app = FastAPI()
+        self.app = FastAPI(lifespan=self.ident_serv.lifespan)
 
         self.access_url = "http://face-recognition-access-service:8000/access_service"
 
-        t = Thread(target=self.ident_serv.detection_loop, daemon=True)
-        t.start()
+        # t = Thread(target=self.ident_serv.detection_loop, daemon=True)
+        # t = Process(target=self.ident_serv.detection_loop)
+        # t.start()
 
         @self.app.post("/identity_service")
         async def receive_permission(msg: EncodingMsg):
@@ -211,6 +215,7 @@ class IdentityService:
     '''
 
     def __init__(self):
+        print('IdentityService init')
         self.client = hazelcast.HazelcastClient(cluster_members=['face-recognition-hazelcast-node-1:5701'])
         self.encodings_map = self.client.get_map("encodings-map").blocking()
 
@@ -253,10 +258,12 @@ class IdentityService:
 
     def detection_loop(self):
         face_uuids = []
+        print('in fn')
 
         consumer = KafkaConsumer('frame_encodings',
                                  value_deserializer=lambda v: FrameEncodings.parse_obj(pickle.loads(v)),
                                  bootstrap_servers=['kafka:19092'])
+        print('connected')
 
         for message in consumer:
             print('consumed')
@@ -292,6 +299,14 @@ class IdentityService:
                 self.send_logs(face_uuids, message.value.datetime, message.value.camera_id)
                 # self.send_recognised_names(face_uuids, message.value.datetime, message.value.camera_id)
 
+    @asynccontextmanager
+    async def lifespan(self, app):
+        p = Process(target=self.detection_loop)
+        p.start()
+        yield
+        p.join()
 
-serv = IdentityController()
-uvicorn.run(serv.app, host="0.0.0.0", port=8001)
+
+if __name__ == "__main__":
+    serv = IdentityController()
+    uvicorn.run(serv.app, host="0.0.0.0", port=8001)
