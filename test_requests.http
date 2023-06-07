@@ -155,3 +155,63 @@ Content-Type: application/json
 {
     "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c"
 }
+
+###
+
+POST http://127.0.0.1:8005/synchronize_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "/dev/video0"
+}
+
+###
+
+POST http://127.0.0.1:8001/identity_service
+Content-Type: application/json
+
+{
+  "person_id" : "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
+  "encoding" : "encoding"
+}
+
+###
+
+POST http://127.0.0.1:8004
+Content-Type: application/json
+
+[
+  {
+    "appearance_time": "2020-01-01 00:00:00",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:01",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:02",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:02",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376da",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  }
+]
+
+###
+GET http://127.0.0.1:8004/appearances_by_location/office
+Accept: application/json
+
+###
+GET http://127.0.0.1:8004
+Accept: application/json

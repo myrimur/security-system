@@ -57,13 +57,17 @@ class VideoStreamService:
 
         video_captures = dict()
         while True:
+            print('in loop')
             for camera_id, url in urls.get_entry_set():
                 if url not in video_captures:
-                    video_captures[url] = cv2.VideoCapture(url + "/video")
+                    print(url)
+                    # video_captures[url] = cv2.VideoCapture(url + "/video")
+                    video_captures[url] = cv2.VideoCapture(url)
                 # ret = video_captures[url].grab()
                 video_captures[url].grab()
                 frame_no += 1
                 if (frame_no % self.skip_rate == 0):
+                    print('processing frame')
                     status, frame = video_captures[url].retrieve()
                     curr_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
@@ -72,6 +76,7 @@ class VideoStreamService:
                     face_locations = face_recognition.face_locations(rgb_small_frame)
                     if len(face_locations) != 0:
                         face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+                        print(face_encodings)
                         for i in range(len(face_encodings)):
                             face_encodings[i] = face_encodings[i].tolist()
                         encodings_msg = FrameEncodings(camera_id=0, datetime=curr_time, encodings=face_encodings)
@@ -92,7 +97,7 @@ class VideoStreamService:
         p.join()
 
 if __name__ == "__main__":    
-    host="127.0.0.1"
+    host="0.0.0.0"
     port=8005
     acc = VideoStreamController()
     uvicorn.run(acc.app, host=host, port=port)

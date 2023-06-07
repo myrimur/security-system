@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from typing import List
 
 
 class EncodingMsg(BaseModel):
@@ -30,3 +31,8 @@ class Notification(BaseModel):
 class CameraInfo(BaseModel):
     camera_id: str
     location: str
+
+class FrameEncodings(BaseModel):
+    camera_id: str
+    datetime: str
+    encodings: List[List[float]]

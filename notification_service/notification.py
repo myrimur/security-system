@@ -27,4 +27,4 @@ class NotificationService:
                 print("Unknown permission")
 
 serv = NotificationController()
-uvicorn.run(serv.app, host = "127.0.0.1", port=8002)
+uvicorn.run(serv.app, host = "0.0.0.0", port=8002)
