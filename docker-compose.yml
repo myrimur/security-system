@@ -148,14 +148,18 @@ services:
         condition: service_healthy
       logging-service:
         condition: service_healthy
-      access-service:
+      video-stream-service:
         condition: service_started
+      # access-service:
+      #   condition: service_started
+      kafka-create-topic:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
     networks:
       - face-recognition-network
-    devices:
-      - /dev/video0:/dev/video0
+    # devices:
+    #   - /dev/video0:/dev/video0
     ports:
       - "8001:8001"
 
@@ -200,14 +204,16 @@ services:
     depends_on:
       synchronized-urls-map-1:
         condition: service_healthy
+      kafka-create-topic:
+        condition: service_completed_successfully
       kafka:
         condition: service_healthy
     networks:
       - face-recognition-network
     ports:
       - "8005:8005"
-    devices:
-      - /dev/video0:/dev/video0
+    # devices:
+    #   - /dev/video0:/dev/video0
 
   synchronized-urls-map-1:
     container_name: face-recognition-synchronized-urls-map-1
@@ -280,10 +286,24 @@ services:
 
   zookeeper:
     image: zookeeper
+    container_name: zookeeper
     ports:
       - "2181:2181"
     environment:
       - KAFKA_ADVERTISED_HOST_NAME=zookeeper
+    networks:
+      - face-recognition-network
+
+  kafka-create-topic:
+    image: wurstmeister/kafka
+    container_name: kafka-create-topic
+    # image: bitnami/kafka:latest
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: /bin/bash -c "kafka-topics.sh --if-exists --bootstrap-server kafka:19092 --delete --topic frame_encodings && kafka-topics.sh --create --bootstrap-server kafka:19092 --replication-factor 1 --partitions 3 --topic frame_encodings"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
     networks:
       - face-recognition-network
 

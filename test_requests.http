@@ -215,3 +215,22 @@ Accept: application/json
 ###
 GET http://127.0.0.1:8004
 Accept: application/json
+
+###
+POST http://127.0.0.1:8005/synchronize_new_camera
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "http://100.64.131.127:8080/video"
+}
+
+###
+
+POST http://127.0.0.1:8001/identity_service
+Content-Type: application/json
+
+{
+  "person_id" : "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
+  "encoding" : "encoding"
+}

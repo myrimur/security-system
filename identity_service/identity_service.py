@@ -207,6 +207,7 @@ class IdentityController:
         @self.app.post("/identity_service")
         async def receive_permission(msg: EncodingMsg):
             self.ident_serv.save_encoding(msg.person_id, msg.encoding)
+            print("IDENTITY POST REQUEST")
 
 
 class IdentityService:
@@ -217,10 +218,13 @@ class IdentityService:
     def __init__(self):
         print('IdentityService init')
         self.client = hazelcast.HazelcastClient(cluster_members=['face-recognition-hazelcast-node-1:5701'])
+        print("hazelcast done")
         self.encodings_map = self.client.get_map("encodings-map").blocking()
+        print("client done")
 
         self.logging_url = "http://face-recognition-logging-service:8004"
         self.access_url = "http://face-recognition-access-service:8000/access_service_check"
+
 
     def save_encoding(self, uuid_id, enc):
         self.encodings_map.put(uuid_id, enc)
@@ -257,46 +261,51 @@ class IdentityService:
         requests.post(self.access_url, json=lst, headers=headers)
 
     def detection_loop(self):
-        face_uuids = []
+        # face_uuids = []
+        print("before consumer")
+        consumer = KafkaConsumer('frame_encodings',
+                            value_deserializer=lambda v: FrameEncodings.parse_obj(pickle.loads(v)),
+                            bootstrap_servers=['kafka:19092'])
+        
+        # 
+
+        print('consumer done')
         print('in fn')
 
-        consumer = KafkaConsumer('frame_encodings',
-                                 value_deserializer=lambda v: FrameEncodings.parse_obj(pickle.loads(v)),
-                                 bootstrap_servers=['kafka:19092'])
-        print('connected')
+        
 
         for message in consumer:
             print('consumed')
             print(message.value.camera_id)
             print(message.value.datetime)
             print(message.value.encodings)
-            face_uuids = []
-            for face_encoding in message.value.encodings:
-                known_faces_and_names = np.asarray(self.encodings_map.entry_set())
-                known_enc = []
+        #     face_uuids = []
+        #     for face_encoding in message.value.encodings:
+        #         known_faces_and_names = np.asarray(self.encodings_map.entry_set())
+        #         known_enc = []
 
-                if len(known_faces_and_names) == 0:
-                    print("No names were registered!")
-                    face_uuids.append("Unknown")
-                    break
+        #         if len(known_faces_and_names) == 0:
+        #             print("No names were registered!")
+        #             face_uuids.append("Unknown")
+        #             break
 
-                for i, (_, elem) in enumerate(known_faces_and_names):
-                    known_enc.append(np.fromstring(elem[1:-1], sep=" "))
+        #         for i, (_, elem) in enumerate(known_faces_and_names):
+        #             known_enc.append(np.fromstring(elem[1:-1], sep=" "))
 
-                matches = face_recognition.compare_faces(known_enc, face_encoding)
-                name = "Unknown"
+        #         matches = face_recognition.compare_faces(known_enc, face_encoding)
+        #         name = "Unknown"
 
-                face_distances = face_recognition.face_distance(known_enc, face_encoding)
-                best_match_index = np.argmin(face_distances)
-                if matches[best_match_index]:
-                    name = known_faces_and_names[best_match_index, 0]
+        #         face_distances = face_recognition.face_distance(known_enc, face_encoding)
+        #         best_match_index = np.argmin(face_distances)
+        #         if matches[best_match_index]:
+        #             name = known_faces_and_names[best_match_index, 0]
 
-                face_uuids.append(name)
+        #         face_uuids.append(name)
 
-            print(f"Date and time: {message.value.datetime} Faces detected: {face_uuids}")
+        #     print(f"Date and time: {message.value.datetime} Faces detected: {face_uuids}")
 
-            if face_uuids:
-                self.send_logs(face_uuids, message.value.datetime, message.value.camera_id)
+        #     if face_uuids:
+        #         self.send_logs(face_uuids, message.value.datetime, message.value.camera_id)
                 # self.send_recognised_names(face_uuids, message.value.datetime, message.value.camera_id)
 
     @asynccontextmanager

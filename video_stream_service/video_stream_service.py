@@ -14,6 +14,7 @@ from multiprocessing import Process
 
 class VideoStreamController:
     def __init__(self):
+        # print("TEEEST")
         self.video_stream_service = VideoStreamService()
         self.app = FastAPI(lifespan=self.video_stream_service.lifespan)
 
@@ -33,12 +34,6 @@ class VideoStreamController:
 class VideoStreamService:
     def __init__(self):
         self.urls = SynchronizedUrlsHazelcastMap()
-        self.kafka_producer_ip = "kafka:19092"
-        self.skip_rate = 5
-        self.producer = KafkaProducer(bootstrap_servers=self.kafka_producer_ip,
-                                value_serializer=lambda v: pickle.dumps(dict(v)))
-        self.remove_rate = 1000
-
 
     def synchronize_new_camera(self, msg: CameraUrl):
         self.urls.add_new(msg)
@@ -52,23 +47,46 @@ class VideoStreamService:
         self.urls.delete(msg)
 
     def kafka_producer_loop(self):
+        kafka_producer_ip = "kafka:19092"
+        skip_rate = 10
+        producer = KafkaProducer(bootstrap_servers=kafka_producer_ip,
+                                value_serializer=lambda v: pickle.dumps(dict(v)))
+        remove_rate = 1000
+
         urls = SynchronizedUrlsHazelcastMap()
         frame_no = 0
 
         video_captures = dict()
         while True:
-            print('in loop')
+            # print('in loop')
             for camera_id, url in urls.get_entry_set():
+                # print(url)
                 if url not in video_captures:
                     print(url)
                     # video_captures[url] = cv2.VideoCapture(url + "/video")
                     video_captures[url] = cv2.VideoCapture(url)
-                # ret = video_captures[url].grab()
-                video_captures[url].grab()
+                ret = video_captures[url].grab()
+                if not ret:
+                    print("grab warning!!!!!")
+                    continue
+                # video_captures[url].grab()
+                # print("RET: ", ret)
+
+                # status, frame = video_captures[url].read()
+                # print("STATUS: ", status)
+                # if not status:
+                #     print("READ warning!!!!!")
+                #     continue
+
+
                 frame_no += 1
-                if (frame_no % self.skip_rate == 0):
-                    print('processing frame')
+                if (frame_no % skip_rate == 0):
+                    # print('processing frame')
                     status, frame = video_captures[url].retrieve()
+                    # print("STATUS: ", status)
+                    if not status:
+                        print("retrieve warning!!!!!")
+                        continue
                     curr_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
 
@@ -76,14 +94,14 @@ class VideoStreamService:
                     face_locations = face_recognition.face_locations(rgb_small_frame)
                     if len(face_locations) != 0:
                         face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-                        print(face_encodings)
+                        # print(face_encodings)
                         for i in range(len(face_encodings)):
                             face_encodings[i] = face_encodings[i].tolist()
                         encodings_msg = FrameEncodings(camera_id=0, datetime=curr_time, encodings=face_encodings)
-                        self.producer.send("frame_encodings", encodings_msg)
+                        producer.send("frame_encodings", encodings_msg)
                         print("done")
                 #оця іфка ніби працює, але ще треба потестити
-                if (frame_no % self.remove_rate == 0):
+                if (frame_no % remove_rate == 0):
                     for url in video_captures.keys():
                         if not urls.contains_value(url):
                             video_captures.pop(url)
