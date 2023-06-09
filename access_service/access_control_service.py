@@ -16,7 +16,7 @@ class AccessControlController:
         self.app = FastAPI()
 
         self.identity_url = "http://face-recognition-identity-service:8001/identity_service"
-        self.notification_serv_url = "http://127.0.0.1:8002/notification"
+        self.notification_serv_url = "http://face-recognition-notification-service:8002/notification"
 
         # TODO: change url to the real one
         self.camera_serv_url = "http://127.0.0.1:8001/camera_service"
@@ -64,8 +64,9 @@ class AccessControlController:
             if self.access_serv.check_if_in_bd(msg.name, msg.camera_id):
                 enc = self.access_serv.get_encodings(msg.image_path)
                 uuid = self.access_serv.save_permission(msg.name, msg.permission, msg.camera_id)
+                # print("ELEM 1: ", str(enc.tolist()))
                 requests.post(self.identity_url, json={"person_id": uuid,
-                                                        "encoding": str(enc)})
+                                                        "encoding": str(enc.tolist())})
             else:
                 print(f"Person {msg.name} and camera {msg.camera_id} are in bd already")
 

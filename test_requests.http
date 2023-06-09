@@ -221,7 +221,7 @@ POST http://127.0.0.1:8005/synchronize_new_camera
 Content-Type: application/json
 
 {
-    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
     "url": "http://100.64.131.127:8080/video"
 }
 
@@ -233,4 +233,16 @@ Content-Type: application/json
 {
   "person_id" : "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
   "encoding" : "encoding"
+}
+
+###
+
+POST http://127.0.0.1:8000/access_service
+Content-Type: application/json
+
+{
+    "image_path" : "profile_img.jpeg",
+    "name": "Karyna",
+    "permission": 0,
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
 }

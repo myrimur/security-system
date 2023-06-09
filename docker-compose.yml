@@ -1,6 +1,17 @@
 version: "3.9"
 
 services:
+  notification-service:
+    container_name: face-recognition-notification-service
+    build:
+      context: ./
+      dockerfile: ./notification_service/Dockerfile
+    # depends: ????
+    ports:
+      - "8002:8002"
+    networks:
+      - face-recognition-network
+
   logging-service:
     container_name: face-recognition-logging-service
     build: ./logging_service
@@ -135,6 +146,10 @@ services:
     depends_on:
       permissions-db:
         condition: service_healthy
+      notification-service:
+        condition: service_started
+    ports:
+      - "8000:8000"
     networks:
       - face-recognition-network
 
@@ -152,8 +167,8 @@ services:
         condition: service_started
       # access-service:
       #   condition: service_started
-      kafka-create-topic:
-        condition: service_completed_successfully
+      # kafka-create-topic:
+      #   condition: service_completed_successfully
       kafka:
         condition: service_healthy
     networks:
@@ -171,7 +186,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: "1111"
       MYSQL_DATABASE: "permissions_db"
-      MYSQL_USER: "daria"
+      MYSQL_USER: "karyna"
       MYSQL_PASSWORD: "2222"
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
@@ -179,7 +194,7 @@ services:
       timeout: 5s
       retries: 3
     volumes:
-      - ./access_service/data:/var/lib/mysql
+      # - ./access_service/data:/var/lib/mysql
       - ./access_service/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - face-recognition-network

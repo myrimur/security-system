@@ -62,7 +62,7 @@ class VideoStreamService:
             for camera_id, url in urls.get_entry_set():
                 # print(url)
                 if url not in video_captures:
-                    print(url)
+                    # print(url)
                     # video_captures[url] = cv2.VideoCapture(url + "/video")
                     video_captures[url] = cv2.VideoCapture(url)
                 ret = video_captures[url].grab()
@@ -97,7 +97,7 @@ class VideoStreamService:
                         # print(face_encodings)
                         for i in range(len(face_encodings)):
                             face_encodings[i] = face_encodings[i].tolist()
-                        encodings_msg = FrameEncodings(camera_id=0, datetime=curr_time, encodings=face_encodings)
+                        encodings_msg = FrameEncodings(camera_id=camera_id, datetime=curr_time, encodings=face_encodings)
                         producer.send("frame_encodings", encodings_msg)
                         print("done")
                 #оця іфка ніби працює, але ще треба потестити

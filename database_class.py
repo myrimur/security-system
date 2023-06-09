@@ -5,7 +5,7 @@ class PermissionsDB:
     def __init__(self):
         self.db_perms = mysql.connector.connect(
             host="face-recognition-permissions-db",
-            user="daria",
+            user="karyna",
             password="2222",
             database="permissions_db"
         )

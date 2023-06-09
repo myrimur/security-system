@@ -5,6 +5,8 @@ from fastapi import FastAPI
 import requests
 import uvicorn
 from msgs import Notification
+from typing import List
+
 
 class NotificationController:
     def __init__(self):
@@ -12,12 +14,12 @@ class NotificationController:
         self.app = FastAPI()
 
         @self.app.post("/notification")
-        async def receive_info(msgs: list[Notification]):
+        async def receive_info(msgs: List[Notification]):
             self.notification_service.react(msgs)
 
 
 class NotificationService:
-    def react(self, msgs: list[Notification]):
+    def react(self, msgs: List[Notification]):
         for msg in msgs:
             if msg.permission == "unknown person":
                 print(f"Unknown person was spotted at location {msg.location} on camera {msg.camera_id} at {msg.appearance_time}")
