@@ -2,7 +2,6 @@ import sys
 sys.path.insert(1, '../')
 
 from fastapi import FastAPI
-import requests
 import uvicorn
 from msgs import Notification
 from typing import List
