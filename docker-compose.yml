@@ -178,6 +178,31 @@ services:
     ports:
       - "8001:8001"
 
+  identity-service-2:
+    container_name: face-recognition-identity-service-2
+    build:
+      context: ./
+      dockerfile: ./identity_service/Dockerfile
+    depends_on:
+      hazelcast-node-1:
+        condition: service_healthy
+      logging-service:
+        condition: service_healthy
+      video-stream-service:
+        condition: service_started
+      # access-service:
+      #   condition: service_started
+      # kafka-create-topic:
+      #   condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    networks:
+      - face-recognition-network
+    # devices:
+    #   - /dev/video0:/dev/video0
+#    ports:
+#      - "8001:8001"
+
   permissions-db:
     container_name: face-recognition-permissions-db
     image: mysql:latest
@@ -213,14 +238,28 @@ services:
     networks:
       - face-recognition-network
 
+  hazelcast-node-2:
+    container_name: face-recognition-hazelcast-node-2
+    image: hazelcast/hazelcast:latest
+#    ports:
+#      - "5701:5701"
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z -v -w5 localhost 5701" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - face-recognition-network
+
   video-stream-service:
     container_name: face-recognition-video-stream-service
     build: ./video_stream_service
     depends_on:
       synchronized-urls-map-1:
         condition: service_healthy
-      kafka-create-topic:
-        condition: service_completed_successfully
+#      kafka-create-topic:
+#        condition: service_completed_successfully
       kafka:
         condition: service_healthy
     networks:

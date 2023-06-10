@@ -4,7 +4,10 @@ import numpy as np
 
 class EncodingsMap:
     def __init__(self):
-        self.client = hazelcast.HazelcastClient(cluster_members=["face-recognition-hazelcast-node-1:5701"])
+        self.client = hazelcast.HazelcastClient(cluster_members=[
+            "face-recognition-hazelcast-node-1:5701",
+            "face-recognition-hazelcast-node-2:5701",
+        ])
         self.encodings_map = self.client.get_map("encodings-map").blocking()
 
     def add_new(self, uuid_id, enc):

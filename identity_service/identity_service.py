@@ -284,7 +284,8 @@ class IdentityService:
         # print("before consumer")
         consumer = KafkaConsumer('frame_encodings',
                             value_deserializer=lambda v: FrameEncodings.parse_obj(pickle.loads(v)),
-                            bootstrap_servers=['kafka:19092'])
+                            bootstrap_servers=['kafka:19092'],
+                            group_id='identity-service')
         
 
         # print('consumer done')
