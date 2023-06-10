@@ -185,7 +185,7 @@ class PermissionsDB:
     def select_location_name(self, camera_uuid):
         self.cursor_db = self.db_perms.cursor()
         to_exec = "SELECT location_name FROM locations WHERE camera_id IN (%s)"
-        values = (camera_uuid)
+        values = (camera_uuid, )
 
         self.cursor_db.execute(to_exec, values)
 
@@ -206,14 +206,21 @@ class PermissionsDB:
         self.cursor_db.close()
 
     def update_location(self, camera_id, location_name):
+        print("INPUT: ", camera_id, location_name)
         self.cursor_db = self.db_perms.cursor()
+        print("before to exec")
         to_exec = "UPDATE locations SET location_name = %s WHERE camera_id IN (%s)"
+        print("after to exec")
         values = (location_name, camera_id)
-
+        print("Values: ", values)
+        print("before execute")
         self.cursor_db.execute(to_exec, values)
+        print("after execute")
 
         self.db_perms.commit()
+        print("commited")
         self.cursor_db.close()
+        print("closed")
 
 
     def remove_location(self, camera_id):

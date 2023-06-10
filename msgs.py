@@ -81,4 +81,5 @@ class CameraLocation(BaseModel):
     camera_id: str
     location: str
 
-
+class CameraId(BaseModel):
+    camera_id: str

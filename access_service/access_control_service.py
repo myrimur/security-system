@@ -125,7 +125,7 @@ sys.path.insert(1, '../')
 from typing import List
 import face_recognition
 from fastapi import FastAPI
-from msgs import Appearance, Permission, CameraLocation
+from msgs import Appearance, Permission, CameraLocation, CameraId
 import requests
 import uvicorn
 from database_class import PermissionsDB
@@ -205,11 +205,13 @@ class AccessControlController:
         
         @self.app.post("/synchronize_update_location")
         def req_update_location(msg: CameraLocation):
+            print("start synchronize_update_location")
             self.access_serv.update_location(msg.camera_id, msg.location)
+            print("end synchronize_update_location")
 
         @self.app.post("/synchronize_removed_camera")
-        def req_remove_location(camera_id):
-            self.access_serv.remove_location(camera_id)
+        def req_remove_location(msg: CameraId):
+            self.access_serv.remove_location(msg.camera_id)
 
 
 class AccessControlService:
@@ -274,8 +276,11 @@ class AccessControlService:
     
 
     def update_location(self, camera_id, location_name):
+        print("before if")
         if self.check_if_location_in_bd(camera_id):
+            print("if")
             self.perm_database.update_location(camera_id, location_name)
+        print("after if")
 
     def remove_location(self, camera_id):
         if self.check_if_location_in_bd(camera_id):
