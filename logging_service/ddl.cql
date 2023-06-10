@@ -1,5 +1,5 @@
 CREATE KEYSPACE IF NOT EXISTS appearances
-WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 2};
+WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 3};
 
 USE appearances;
 

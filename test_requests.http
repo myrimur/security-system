@@ -1,0 +1,282 @@
+POST http://127.0.0.1:8000/access_service HTTP/1.1
+Content-Type: application/json
+
+{
+    "image_path" : "../2023-05-27-141949.jpg",
+    "name": "Dasha",
+    "permission": 1,
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+}
+
+###
+
+POST http://127.0.0.1:8000/access_service HTTP/1.1
+Content-Type: application/json
+
+{
+    "image_path" : "karyna.jpg",
+    "name": "Karyna",
+    "permission": 1,
+    "camera_id": 0
+}
+
+###
+
+GET http://127.0.0.1:8000/logging_service HTTP/1.1
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8000/logging_service HTTP/1.1
+Content-Type: application/json
+
+[
+  {
+    "appearance_time": "2020-01-01 00:00:00",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:01",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:02",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:02",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376da",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  }
+]
+
+###
+
+POST http://127.0.0.1:8003/add_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "98add50e-f806-11ed-89da-a434d95dfb10",
+    "url": "http://100.64.131.127:8080/video",
+    "location": "Toronto",
+    "is_active": "True"
+}
+
+###
+
+GET http://127.0.0.1:8003/active_urls HTTP/1.1
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/locations HTTP/1.1
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8000/update_camera_url HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "98add50e-f806-11ed-89da-a434d95dfb10",
+    "url": "http://100.64.133.89:8080/video"
+}
+
+###
+
+POST http://127.0.0.1:8003/update_camera_location HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
+    "location": "Lviv"
+}
+
+###
+
+POST http://127.0.0.1:8000/update_camera_activity HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "is_active": 0
+}
+
+###
+
+POST http://127.0.0.1:8000/update_camera_activity HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "is_active": 1
+}
+
+###
+
+POST http://127.0.0.1:8003/remove_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+}
+
+###
+
+POST http://127.0.0.1:9000/synchronize_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "http://100.64.132.180:8080"
+}
+
+###
+
+POST http://127.0.0.1:9000/synchronize_camera_url HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "http://100.64.132.181:8080"
+}
+
+###
+
+POST http://127.0.0.1:9000/synchronize_inactive_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c"
+}
+
+###
+
+POST http://127.0.0.1:8005/synchronize_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "1a956fcf-b4d7-4d64-adf1-02ac160acb8c",
+    "url": "/dev/video0"
+}
+
+###
+
+POST http://127.0.0.1:8001/identity_service
+Content-Type: application/json
+
+{
+  "person_id" : "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
+  "encoding" : "encoding"
+}
+
+###
+
+POST http://127.0.0.1:8004
+Content-Type: application/json
+
+[
+  {
+    "appearance_time": "2020-01-01 00:00:00",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:01",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:02",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376dc",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  },
+  {
+    "appearance_time": "2020-01-01 00:00:02",
+    "location": "office",
+    "person_id": "3d1ab1d4-ba42-45fe-9394-1a2a1f5376da",
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+  }
+]
+
+###
+GET http://127.0.0.1:8004/appearances_by_location/office
+Accept: application/json
+
+###
+GET http://127.0.0.1:8004
+Accept: application/json
+
+###
+POST http://127.0.0.1:8005/synchronize_new_camera
+Content-Type: application/json
+
+{
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddc",
+    "url": "http://100.64.131.127:8080/video"
+}
+
+###
+
+POST http://127.0.0.1:8001/identity_service
+Content-Type: application/json
+
+{
+  "person_id" : "6d52f90e-0177-4796-9fc7-536a9bff1ddb",
+  "encoding" : "encoding"
+}
+
+###
+
+POST http://127.0.0.1:8000/access_service
+Content-Type: application/json
+
+{
+    "image_path" : "profile_img.jpeg",
+    "name": "Karyna",
+    "permission": 0,
+    "camera_id": "6d52f90e-0177-4796-9fc7-536a9bff1ddb"
+}
+
+###
+
+POST http://127.0.0.1:8003/add_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "url": "http://100.64.131.127:8080/video",
+    "location": "Toronto",
+    "is_active": "True"
+}
+
+###
+
+POST http://127.0.0.1:8003/update_camera_location HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "98add50e-f806-11ed-89da-a434d95dfb10",
+    "location": "Lviv"
+}
+
+###
+
+POST http://127.0.0.1:8003/add_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "98add50e-f806-11ed-89da-a434d95dfb10",
+    "url": "http://100.64.131.127:8080/video",
+    "location": "Lviv",
+    "is_active": "False"
+}

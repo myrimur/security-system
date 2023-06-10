@@ -1,6 +1,17 @@
 version: "3.9"
 
 services:
+  notification-service:
+    container_name: face-recognition-notification-service
+    build:
+      context: ./
+      dockerfile: ./notification_service/Dockerfile
+    # depends: ????
+    ports:
+      - "8002:8002"
+    networks:
+      - face-recognition-network
+
   logging-service:
     container_name: face-recognition-logging-service
     build: ./logging_service
@@ -16,6 +27,8 @@ services:
       - face-recognition-network
     ports:
       - "8004:8004"
+    volumes:
+      - ./logging_service:/opt/app
 
   cassandra-node-1:
     container_name: face-recognition-cassandra-node-1
@@ -32,6 +45,44 @@ services:
     networks:
       - face-recognition-network
 
+  cassandra-node-2:
+    container_name: face-recognition-cassandra-node-2
+    image: "cassandra:latest"
+    depends_on:
+      cassandra-node-1:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: always
+    environment:
+      - "MAX_HEAP_SIZE=256M"
+      - "HEAP_NEWSIZE=128M"
+      - CASSANDRA_SEEDS=cassandra-node-1
+    networks:
+      - face-recognition-network
+
+  cassandra-node-3:
+    container_name: face-recognition-cassandra-node-3
+    image: "cassandra:latest"
+    depends_on:
+      cassandra-node-2:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "cqlsh", "-u cassandra", "-p cassandra" ,"-e describe keyspaces" ]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+    restart: always
+    environment:
+      - "MAX_HEAP_SIZE=256M"
+      - "HEAP_NEWSIZE=128M"
+      - CASSANDRA_SEEDS=cassandra-node-2
+    networks:
+      - face-recognition-network
+
   cassandra-ddl:
     container_name: face-recognition-cassandra-ddl
     image: "cassandra:latest"
@@ -44,16 +95,274 @@ services:
     networks:
       - face-recognition-network
 
-  analytics-service:
-    container_name: face-recognition-analytics-service
-    build: ./analytics_service
+  logging-analytics:
+    container_name: face-recognition-logging-analytics
+    image: docker.io/bitnami/spark:3.3.0
     depends_on:
+      cassandra-node-1:
+        condition: service_healthy
+    command: /bin/bash -c "spark-submit --packages com.datastax.spark:spark-cassandra-connector_2.12:3.3.0 --master spark://face-recognition-spark:7077 --deploy-mode client /opt/app/analytics.py"
+    networks:
+      - face-recognition-network
+    volumes:
+      - ./logging_service:/opt/app
+
+  spark:
+    container_name: face-recognition-spark
+    image: docker.io/bitnami/spark:3.3.0
+    networks:
+      - face-recognition-network
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - '8080:8080'
+
+  spark-worker:
+    container_name: face-recognition-spark-worker
+    image: docker.io/bitnami/spark:3.3.0
+    networks:
+      - face-recognition-network
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://face-recognition-spark:7077
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_WORKER_CORES=1
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    volumes:
+      - ./logging_service:/opt/app
+
+  access-service:
+    container_name: face-recognition-access-service
+    build:
+      context: ./
+      dockerfile: ./access_service/Dockerfile
+    depends_on:
+      permissions-db:
+        condition: service_healthy
+      notification-service:
+        condition: service_started
+    ports:
+      - "8000:8000"
+    networks:
+      - face-recognition-network
+
+  identity-service:
+    container_name: face-recognition-identity-service
+    build:
+      context: ./
+      dockerfile: ./identity_service/Dockerfile
+    depends_on:
+      hazelcast-node-1:
+        condition: service_healthy
       logging-service:
+        condition: service_healthy
+      video-stream-service:
+        condition: service_started
+      # access-service:
+      #   condition: service_started
+      # kafka-create-topic:
+      #   condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    networks:
+      - face-recognition-network
+    # devices:
+    #   - /dev/video0:/dev/video0
+    ports:
+      - "8001:8001"
+
+  identity-service-2:
+    container_name: face-recognition-identity-service-2
+    build:
+      context: ./
+      dockerfile: ./identity_service/Dockerfile
+    depends_on:
+      hazelcast-node-1:
+        condition: service_healthy
+      logging-service:
+        condition: service_healthy
+      video-stream-service:
+        condition: service_started
+      # access-service:
+      #   condition: service_started
+      # kafka-create-topic:
+      #   condition: service_completed_successfully
+      kafka:
+        condition: service_healthy
+    networks:
+      - face-recognition-network
+    # devices:
+    #   - /dev/video0:/dev/video0
+#    ports:
+#      - "8001:8001"
+
+  permissions-db:
+    container_name: face-recognition-permissions-db
+    image: mysql:latest
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "1111"
+      MYSQL_DATABASE: "permissions_db"
+      MYSQL_USER: "karyna"
+      MYSQL_PASSWORD: "2222"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      # - ./access_service/data:/var/lib/mysql
+      - ./access_service/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - face-recognition-network
+
+  hazelcast-node-1:
+    container_name: face-recognition-hazelcast-node-1
+    image: hazelcast/hazelcast:latest
+    ports:
+      - "5701:5701"
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z -v -w5 localhost 5701" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - face-recognition-network
+
+  hazelcast-node-2:
+    container_name: face-recognition-hazelcast-node-2
+    image: hazelcast/hazelcast:latest
+#    ports:
+#      - "5701:5701"
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z -v -w5 localhost 5701" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - face-recognition-network
+
+  video-stream-service:
+    container_name: face-recognition-video-stream-service
+    build: ./video_stream_service
+    depends_on:
+      synchronized-urls-map-1:
+        condition: service_healthy
+#      kafka-create-topic:
+#        condition: service_completed_successfully
+      kafka:
         condition: service_healthy
     networks:
       - face-recognition-network
     ports:
       - "8005:8005"
+    devices:
+      - /dev/video0:/dev/video0
+
+  synchronized-urls-map-1:
+    container_name: face-recognition-synchronized-urls-map-1
+    image: hazelcast/hazelcast:latest
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "nc -z -v -w5 localhost 5701" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - face-recognition-network
+
+  camera-service:
+    container_name: face-recognition-camera-service
+    build: ./camera_service
+    networks:
+      - face-recognition-network
+    depends_on:
+      cameras-db:
+        condition: service_healthy
+    ports:
+      - "8003:8003"
+
+  cameras-db:
+    container_name: face-recognition-cameras-db
+    image: mysql:latest
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: "11111"
+      MYSQL_DATABASE: "cameras_db"
+      MYSQL_USER: "karyna"
+      MYSQL_PASSWORD: "2222"
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - ./camera_service/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./camera_service/add_init_cameras.sql:/docker-entrypoint-initdb.d/add_init_cameras.sql
+      - ./camera_service/data:/var/lib/mysql
+    networks:
+      - face-recognition-network
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: >-
+        LISTENER_DOCKER_INTERNAL://kafka:19092,
+        LISTENER_DOCKER_EXTERNAL://127.0.0.1:9092
+      KAFKA_LISTENERS: >-
+        LISTENER_DOCKER_INTERNAL://:19092,
+        LISTENER_DOCKER_EXTERNAL://:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: >-
+        LISTENER_DOCKER_INTERNAL:PLAINTEXT,
+        LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+    healthcheck:
+      test: [ "CMD-SHELL", "kafka-broker-api-versions.sh --bootstrap-server localhost:9092" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      - zookeeper
+    networks:
+      - face-recognition-network
+
+  zookeeper:
+    image: zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
+    environment:
+      - KAFKA_ADVERTISED_HOST_NAME=zookeeper
+    networks:
+      - face-recognition-network
+
+  kafka-create-topic:
+    image: wurstmeister/kafka
+    container_name: kafka-create-topic
+    # image: bitnami/kafka:latest
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: /bin/bash -c "kafka-topics.sh --if-exists --bootstrap-server kafka:19092 --delete --topic frame_encodings && kafka-topics.sh --create --bootstrap-server kafka:19092 --replication-factor 1 --partitions 3 --topic frame_encodings"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+    networks:
+      - face-recognition-network
 
 networks:
   face-recognition-network:

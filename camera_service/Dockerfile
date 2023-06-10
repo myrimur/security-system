@@ -1,7 +1,9 @@
-FROM python:3.10-slim
+FROM python:3.10
 WORKDIR /opt/app
-COPY ./main.py .
+COPY ./msgs.py .
+COPY ./camera_service.py .
+COPY ./cameras_db.py .
 COPY ./requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
   && pip install --no-cache-dir -r requirements.txt
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8005"]
+CMD ["python", "camera_service.py"]
