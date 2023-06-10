@@ -305,20 +305,19 @@ class IdentityService:
 
                     if len(known_faces_and_names) == 0:
                         print("No names were registered!")
-                        face_uuids.append("Unknown")
-                        break
+                        name = "Unknown"
+                    else:
+                        for i, (_, elem) in enumerate(known_faces_and_names):
+                            # print("ELEM 2: ", elem)
+                            known_enc.append(np.fromstring(elem[1:-1], sep=", "))
 
-                    for i, (_, elem) in enumerate(known_faces_and_names):
-                        # print("ELEM 2: ", elem)
-                        known_enc.append(np.fromstring(elem[1:-1], sep=", "))
+                        matches = face_recognition.compare_faces(known_enc, np.array(face_encoding))
+                        name = "Unknown"
 
-                    matches = face_recognition.compare_faces(known_enc, np.array(face_encoding))
-                    name = "Unknown"
-
-                    face_distances = face_recognition.face_distance(known_enc, np.array(face_encoding))
-                    best_match_index = np.argmin(face_distances)
-                    if matches[best_match_index]:
-                        name = known_faces_and_names[best_match_index, 0]
+                        face_distances = face_recognition.face_distance(known_enc, np.array(face_encoding))
+                        best_match_index = np.argmin(face_distances)
+                        if matches[best_match_index]:
+                            name = known_faces_and_names[best_match_index, 0]
 
                     if name == "Unknown":
                         name = str(uuid4())
