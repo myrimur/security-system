@@ -10,13 +10,18 @@ import cv2
 import pickle
 from kafka import KafkaProducer
 from multiprocessing import Process
+import requests
+import time
 
 
 class VideoStreamController:
     def __init__(self):
-        # print("TEEEST")
+        print("TEEEST")
         self.video_stream_service = VideoStreamService()
         self.app = FastAPI(lifespan=self.video_stream_service.lifespan)
+        print("start synchronize_cameras_urls")
+        self.video_stream_service.synchronize_cameras_urls()
+        print("end synchronize_cameras_urls")
 
         @self.app.post("/synchronize_new_camera")
         def synchronize_new_camera(msg: CameraUrl):
@@ -33,7 +38,25 @@ class VideoStreamController:
 
 class VideoStreamService:
     def __init__(self):
+        self.camera_service_active_urls = "http://face-recognition-camera-service:8003/active_urls"
         self.urls = SynchronizedUrlsHazelcastMap()
+    
+    def synchronize_cameras_urls(self):
+        # ADD CHECK IF GET REQUEST IS SUCCESSFUL
+        while True:
+            # print("send req")
+            response = requests.get(self.camera_service_active_urls)
+            # print("got req")
+            if response.status_code:
+                # print("SUCCESS: ", response.json())
+                for id_url in response.json():
+                    # print("ID URL: ", id_url)
+                    self.urls.add_new(CameraUrl(camera_id=id_url["camera_id"], url=id_url["url"]))
+                    # print("DONE")
+                return
+            # print("FAIL")
+            time.sleep(1)
+
 
     def synchronize_new_camera(self, msg: CameraUrl):
         self.urls.add_new(msg)

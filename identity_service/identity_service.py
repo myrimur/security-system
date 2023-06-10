@@ -257,7 +257,7 @@ class IdentityService:
             lst.append({
             "person_id": uuid_id,
             "camera_id": camera_id,          
-            "location": "it space",     # dummy
+            # "location": "it space",     # dummy
             "appearance_time": time_ap
             })
         headers = {'Content-Type': 'application/json'}

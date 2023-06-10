@@ -250,6 +250,8 @@ services:
     depends_on:
       cameras-db:
         condition: service_healthy
+    ports:
+      - "8003:8003"
 
   cameras-db:
     container_name: face-recognition-cameras-db
@@ -268,6 +270,7 @@ services:
       retries: 3
     volumes:
       - ./camera_service/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./camera_service/add_init_cameras.sql:/docker-entrypoint-initdb.d/add_init_cameras.sql
       - ./camera_service/data:/var/lib/mysql
     networks:
       - face-recognition-network

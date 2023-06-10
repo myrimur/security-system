@@ -32,14 +32,14 @@ class CamerasDB:
         self.cursor_db.execute("CREATE TABLE IF NOT EXISTS cameras (camera_id VARCHAR(36), url TINYTEXT, location TINYTEXT, is_active BOOLEAN)")
     
     def insert_into_bd(self, msg: CameraInfo):
-        msg_uuid = str(uuid.uuid4())
+        # msg_uuid = str(uuid.uuid4())
         to_exec = "INSERT INTO cameras (camera_id, url, location, is_active) VALUES (%s, %s, %s, %s)"
-        values = (msg_uuid, msg.url, msg.location, msg.is_active)
+        values = (msg.camera_id, msg.url, msg.location, msg.is_active)
         self.cursor_db.execute(to_exec, values)
         self.db_cameras.commit()
 
-        print(msg.url, msg.location, msg.is_active)
-        return msg_uuid
+        # print(msg.url, msg.location, msg.is_active)
+        # return msg_uuid
 
         # self.last_update_for_vs = time.time()
         # self.last_update_for_ac = self.last_update_for_vs
