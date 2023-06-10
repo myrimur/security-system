@@ -3,73 +3,150 @@ from msgs import CameraInfo, CameraUrl, CameraLocation, CameraActivity, CameraId
 import uvicorn
 import requests
 from cameras_db import CamerasDB
+import logging
+import time
 
 
 class CameraController:
     def __init__(self):
         self.camera_service = CameraService()
         self.app = FastAPI()
-        #create queue for lambda
 
-        # TODO: change url to the real one
         self.video_stream_service = "http://face-recognition-video-stream-service:8005"
-        #add synchronize_new_camera and synchronize_removed_camera to access_control_service
         self.access_control_service = "http://face-recognition-access-service:8000"
 
         @self.app.get("/active_urls")
         def get_active_urls():
-            return self.camera_service.get_active_urls()
+            active_urls = self.camera_service.get_active_urls()
+            logging.info("ACTIVE URLS: " + str(active_urls))
+            return active_urls
 
         @self.app.get("/locations")
         def get_locations():
-            return self.camera_service.get_locations()
+            locations = self.camera_service.get_locations()
+            logging.info("LOCATIONS: " + str(locations))
+            return locations
 
         @self.app.post("/add_new_camera")
         def add_new_camera(msg: CameraInfo):
-            #check if operation is ok?
-            # msg_uuid = 
             self.camera_service.add_new_camera(msg)
             camera_url_msg = CameraUrl(camera_id=msg.camera_id, url=msg.url)
             camera_location_msg = CameraLocation(camera_id=msg.camera_id, location=msg.location)
 
-            requests.post(self.video_stream_service + "/synchronize_new_camera", camera_url_msg.json())
-            #uncomment for access control service 
-            requests.post(self.access_control_service + "/synchronize_new_location", camera_location_msg.json())
+            while True:
+                try:
+                    response = requests.post(self.video_stream_service + "/synchronize_new_camera", camera_url_msg.json())
+                    if response.status_code:
+                        break
+                    logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_new_camera")
+                    time.sleep(1)
+                except:
+                    logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_new_camera")
+                    time.sleep(1)
+
+            while True:
+                try:
+                    response = requests.post(self.access_control_service + "/synchronize_new_location", camera_location_msg.json())
+                    if response.status_code:
+                        break
+                    logging.warning("problem with post request to: " + self.access_control_service + "/synchronize_new_location")
+                    time.sleep(1)
+                except:
+                    logging.warning("problem with post request to: " + self.access_control_service + "/synchronize_new_location")
+                    time.sleep(1)
+
+            
 
         @self.app.post("/update_camera_url")
         def update_camera_url(msg: CameraUrl):
-            #check if operation is ok?
             self.camera_service.update_camera_url(msg)
-            requests.post(self.video_stream_service + "/synchronize_camera_url", msg.json())
+            while True:
+                try:
+                    response = requests.post(self.video_stream_service + "/synchronize_camera_url", msg.json())
+                    if response.status_code:
+                        break
+                    logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_camera_url")
+                    time.sleep(1)
+                except:
+                    logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_camera_url")
+                    time.sleep(1)
 
         @self.app.post("/update_camera_location")
         def update_camera_location(msg: CameraLocation):
             #check if operation is ok?
             self.camera_service.update_camera_location(msg)
-            requests.post(self.access_control_service + "/synchronize_update_location", msg.json())
+            while True:
+                try:
+                    response = requests.post(self.access_control_service + "/synchronize_update_location", msg.json())
+                    if response.status_code:
+                        break
+                    logging.warning("problem with post request to: " + self.access_control_service + "/synchronize_update_location")
+                    time.sleep(1)
+                except:
+                    logging.warning("problem with post request to: " + self.access_control_service + "/synchronize_update_location")
+                    time.sleep(1)
+
+            
 
         @self.app.post("/update_camera_activity")
         def update_camera_activity(msg: CameraActivity):
-            #check if operation is ok?
             self.camera_service.update_camera_activity(msg)
             camera_id = CameraId(camera_id=msg.camera_id)
-            # print(self.camera_service.get_url(camera_id))
             camera_url = CameraUrl(camera_id=msg.camera_id, url=self.camera_service.get_url(camera_id))
 
-            #should we manipulate active/inactive cameras in access control service???????
-            #I think that no
+
             if bool(int(msg.is_active)):
-               requests.post(self.video_stream_service + "/synchronize_new_camera", camera_url.json())
+                while True:
+                    try:
+                        response = requests.post(self.video_stream_service + "/synchronize_new_camera", camera_url.json())
+                        if response.status_code:
+                            break
+                        logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_new_camera")
+                        time.sleep(1)
+                    except:
+                        logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_new_camera")
+                        time.sleep(1)
             else:
-               requests.post(self.video_stream_service + "/synchronize_inactive_camera", camera_id.json())
+                while True:
+                    try:
+                        response = requests.post(self.video_stream_service + "/synchronize_inactive_camera", camera_id.json())
+                        if response.status_code:
+                            break
+                        logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_inactive_camera")
+                        time.sleep(1)
+                    except:
+                        logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_inactive_camera")
+                        time.sleep(1)
+
+               
                 
 
         @self.app.post("/remove_camera")
         def remove_camera(msg: CameraId):
-            #check if operation is ok?
             self.camera_service.remove_camera(msg)
-            requests.post(self.video_stream_service + "/synchronize_inactive_camera", msg.json())
-            requests.post(self.access_control_service + "/synchronize_removed_camera", msg.json())
+            while True:
+                try:
+                    response = requests.post(self.video_stream_service + "/synchronize_inactive_camera", msg.json())
+                    if response.status_code:
+                        break
+                    logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_inactive_camera")
+                    time.sleep(1)
+                except:
+                    logging.warning("problem with post request to: " + self.video_stream_service + "/synchronize_inactive_camera")
+                    time.sleep(1)
+
+            while True:
+                try:
+                    response = requests.post(self.access_control_service + "/synchronize_removed_camera", msg.json())
+                    if response.status_code:
+                        break
+                    logging.warning("problem with post request to: " + self.access_control_service + "/synchronize_removed_camera")
+                    time.sleep(1)
+                except:
+                    logging.warning("problem with post request to: " + self.access_control_service + "/synchronize_removed_camera")
+                    time.sleep(1)
+
+        
 
 class CameraService:
     def __init__(self):
@@ -79,17 +156,13 @@ class CameraService:
         cameras_urls = self.database.select_active_cameras()
         msgs = []
         for (camera_id, url) in cameras_urls:
-            # print(camera_id, url)
             msgs.append(CameraUrl(camera_id=camera_id, url=url))
-        # return CameraUrlList(each_camera_url=msgs)
         return msgs
     
-
     def get_locations(self):
         cameras_locations = self.database.select_all_cameras_locations()
         msgs = []
         for (camera_id, location) in cameras_locations:
-            # print(camera_id, location)
             msgs.append(CameraLocation(camera_id=camera_id, location=location))
         return msgs
     
@@ -111,7 +184,7 @@ class CameraService:
     def get_url(self, msg: CameraId):
         urls = self.database.get_url(msg)
         if len(urls) > 1:
-            print("error")
+            logging.warning("more than one camera with the same camera_id in database")
             return
         return urls[0][0]
 

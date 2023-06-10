@@ -268,3 +268,15 @@ Content-Type: application/json
     "camera_id": "98add50e-f806-11ed-89da-a434d95dfb10",
     "location": "Lviv"
 }
+
+###
+
+POST http://127.0.0.1:8003/add_new_camera HTTP/1.1
+Content-Type: application/json
+
+{
+    "camera_id": "98add50e-f806-11ed-89da-a434d95dfb10",
+    "url": "http://100.64.131.127:8080/video",
+    "location": "Lviv",
+    "is_active": "False"
+}

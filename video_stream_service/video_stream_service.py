@@ -12,16 +12,15 @@ from kafka import KafkaProducer
 from multiprocessing import Process
 import requests
 import time
+import logging
 
+logging.basicConfig(level=logging.INFO)
 
 class VideoStreamController:
     def __init__(self):
-        print("TEEEST")
         self.video_stream_service = VideoStreamService()
         self.app = FastAPI(lifespan=self.video_stream_service.lifespan)
-        print("start synchronize_cameras_urls")
         self.video_stream_service.synchronize_cameras_urls()
-        print("end synchronize_cameras_urls")
 
         @self.app.post("/synchronize_new_camera")
         def synchronize_new_camera(msg: CameraUrl):
@@ -42,32 +41,30 @@ class VideoStreamService:
         self.urls = SynchronizedUrlsHazelcastMap()
     
     def synchronize_cameras_urls(self):
-        # ADD CHECK IF GET REQUEST IS SUCCESSFUL
         while True:
-            # print("send req")
-            response = requests.get(self.camera_service_active_urls)
-            # print("got req")
-            if response.status_code:
-                # print("SUCCESS: ", response.json())
-                for id_url in response.json():
-                    # print("ID URL: ", id_url)
-                    self.urls.add_new(CameraUrl(camera_id=id_url["camera_id"], url=id_url["url"]))
-                    # print("DONE")
-                return
-            # print("FAIL")
-            time.sleep(1)
-
+            try:
+                response = requests.get(self.camera_service_active_urls)
+                if response.status_code:
+                    for id_url in response.json():
+                        self.urls.add_new(CameraUrl(camera_id=id_url["camera_id"], url=id_url["url"]))
+                    return
+                logging.warning("unsuccessful get request while synchronizing active urls")
+                time.sleep(1)
+            except:
+                logging.warning("unsuccessful get request while synchronizing active urls")
+                time.sleep(1)
 
     def synchronize_new_camera(self, msg: CameraUrl):
         self.urls.add_new(msg)
-        print("SYNCHRONIZED")
-        print(msg)
+        logging.info("new camera was synchronized: camera_id = " + msg.camera_id + ", url = " + msg.url)
 
     def synchronize_camera_url(self, msg: CameraUrl):
         self.urls.change_url(msg)
+        logging.info("camera url was synchronized: camera_id = " + msg.camera_id + ", url = " + msg.url)
 
     def synchronize_inactive_camera(self, msg: CameraId):
         self.urls.delete(msg)
+        logging.info("camera was removed: camera_id = " + msg.camera_id)
 
     def kafka_producer_loop(self):
         kafka_producer_ip = "kafka:19092"
@@ -81,34 +78,20 @@ class VideoStreamService:
 
         video_captures = dict()
         while True:
-            # print('in loop')
             for camera_id, url in urls.get_entry_set():
-                # print(url)
                 if url not in video_captures:
-                    # print(url)
-                    # video_captures[url] = cv2.VideoCapture(url + "/video")
                     video_captures[url] = cv2.VideoCapture(url)
+                    logging.info("VideoCapture was created for url = " + url)
                 ret = video_captures[url].grab()
                 if not ret:
-                    print("grab warning!!!!!")
+                    logging.warning("GRAB: connection problems with camera_id = " + camera_id + ", url = " + url)
                     continue
-                # video_captures[url].grab()
-                # print("RET: ", ret)
-
-                # status, frame = video_captures[url].read()
-                # print("STATUS: ", status)
-                # if not status:
-                #     print("READ warning!!!!!")
-                #     continue
-
 
                 frame_no += 1
                 if (frame_no % skip_rate == 0):
-                    # print('processing frame')
                     status, frame = video_captures[url].retrieve()
-                    # print("STATUS: ", status)
                     if not status:
-                        print("retrieve warning!!!!!")
+                        logging.warning("RETRIEVE: problem with camera_id = " + camera_id + ", url = " + url)
                         continue
                     curr_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     small_frame = cv2.resize(frame, (0, 0), fx=0.25, fy=0.25)
@@ -117,17 +100,18 @@ class VideoStreamService:
                     face_locations = face_recognition.face_locations(rgb_small_frame)
                     if len(face_locations) != 0:
                         face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
-                        # print(face_encodings)
                         for i in range(len(face_encodings)):
                             face_encodings[i] = face_encodings[i].tolist()
                         encodings_msg = FrameEncodings(camera_id=camera_id, datetime=curr_time, encodings=face_encodings)
                         producer.send("frame_encodings", encodings_msg)
-                        print("done")
+                        logging.info("face encodings were detected on camera_id = " + camera_id + ", url = " + url)
+                
                 #оця іфка ніби працює, але ще треба потестити
                 if (frame_no % remove_rate == 0):
                     for url in video_captures.keys():
                         if not urls.contains_value(url):
                             video_captures.pop(url)
+                            logging.info("unactive url was removed: " + url)
 
 
     @asynccontextmanager
