@@ -227,8 +227,8 @@ services:
       - face-recognition-network
     ports:
       - "8005:8005"
-    # devices:
-    #   - /dev/video0:/dev/video0
+    devices:
+      - /dev/video0:/dev/video0
 
   synchronized-urls-map-1:
     container_name: face-recognition-synchronized-urls-map-1

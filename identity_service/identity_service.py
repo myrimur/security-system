@@ -320,12 +320,13 @@ class IdentityService:
                     if matches[best_match_index]:
                         name = known_faces_and_names[best_match_index, 0]
 
+                    if name == "Unknown":
+                        name = str(uuid4())
+                        print(name)
+                        encodings_map.add_new(name, str(face_encoding))
+                        unknown_count += 1
 
                     face_uuids.append(name)
-
-                    if name == "Unknown":
-                        encodings_map.add_new(str(uuid4()), str(face_encoding))
-                        unknown_count += 1
 
 
                 # print("DEBUG ", face_uuids)
